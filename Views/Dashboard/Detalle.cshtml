@@ -1,0 +1,130 @@
+﻿@model Organizacional.Models.Documento
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Detalle del Pendiente";
+    var tecnico = Model.Tareas.FirstOrDefault()?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado";
+    var tieneMantenimientos = Model.Mantenimientos != null && Model.Mantenimientos.Any();
+}
+
+<h2>Detalle del Pendiente</h2>
+
+<div class="card p-3 mb-4 shadow">
+    <h4>Información del Documento</h4>
+    <p><strong>Tipo:</strong> @Model.TipoDocumento</p>
+    <p><strong>Número:</strong> @Model.NumeroDocumento</p>
+    <p><strong>Descripción:</strong> @Model.Descripcion</p>
+    <p><strong>Empresa Destino:</strong> @Model.EmpresaDestino</p>
+    <p><strong>Subido por:</strong> @Model.IdUsuarioSubioNavigation?.Nombre</p>
+    <p><strong>Fecha de subida:</strong> @Model.FechaSubida</p>
+
+    @if (Model.TipoDocumento == "Contrato")
+    {
+        <p><strong>Fecha Inicio:</strong> @Model.FechaInicio</p>
+        <p><strong>Fecha Fin:</strong> @Model.FechaFin</p>
+    }
+    else
+    {
+        <p><strong>Fecha Generación:</strong> @Model.FechaGeneracion</p>
+    }
+
+    <p>
+        <strong>Servicios:</strong>
+        @(Model.Suministro == true ? "Suministro " : "")
+        @(Model.Instalacion == true ? "Instalación " : "")
+        @(Model.Mantenimiento == true ? "Mantenimiento" : "")
+    </p>
+
+    <p><strong>Técnico asignado:</strong> @tecnico</p>
+
+    @if (tecnico == "No asignado" && (Model.Instalacion == true || Model.Mantenimiento == true))
+    {
+        <a asp-action="AsignarTecnico" asp-route-id="@Model.IdDocumento" class="btn btn-warning mt-2">
+            Asignar Técnico
+        </a>
+    }
+</div>
+@if (tieneMantenimientos)
+{
+    <h4>Mantenimientos</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Total Programados</th>
+                <th>Realizados</th>
+                <th>Fechas Realizadas</th>
+                <th>Próximo</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var m in Model.Mantenimientos)
+            {
+                <tr>
+                    <td>@m.Id</td>
+                    <td>@m.TotalMantenimientos</td>
+                    <td>@m.MantenimientoRealizado</td>
+                    <td>
+                        @{
+                            var fechas = string.IsNullOrEmpty(m.FechasRealizadasJson)
+                            ? new List<string>()
+                            : JsonSerializer.Deserialize<List<string>>(m.FechasRealizadasJson);
+                        }
+
+                        @if (fechas.Any())
+                        {
+                            <ul>
+                                @foreach (var fecha in fechas)
+                                {
+                                    <li>@DateTime.Parse(fecha).ToString("dd/MM/yyyy")</li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <span>No hay registros</span>
+                        }
+                    </td>
+                    <td>
+                        <form asp-action="ActualizarProximoMantenimiento" asp-controller="Dashboard" method="post" class="d-flex align-items-center gap-2">
+                            <input type="hidden" name="id" value="@m.Id" />
+                            <input type="date" name="nuevaFecha" class="form-control form-control-sm"
+                                   value="@(m.ProximoMantenimiento?.ToString("yyyy-MM-dd") ?? "")" />
+                            <button type="submit" class="btn btn-success btn-sm">Guardar</button>
+                        </form>
+                    </td>
+                    <td>
+                        <form asp-action="RegistrarMantenimientoPost" asp-route-id="@m.Id" method="post">
+                            <button type="submit" class="btn btn-primary mt-3">Registrar mantenimiento de hoy</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<div class="row">
+    <div class="col-md-6">
+        <h4>Documento PDF</h4>
+        @if (!string.IsNullOrEmpty(Model.ArchivoUrl))
+        {
+            <iframe src="@Model.ArchivoUrl" width="100%" height="500px"></iframe>
+        }
+        else
+        {
+            <p class="text-danger">No se ha subido un archivo para este documento.</p>
+        }
+    </div>
+
+    <div class="col-md-6">
+        <h4>Cotización PDF</h4>
+        @if (!string.IsNullOrEmpty(Model.CotizacionArchivoUrl))
+        {
+            <iframe src="@Model.CotizacionArchivoUrl" width="100%" height="500px"></iframe>
+        }
+        else
+        {
+            <p class="text-warning">No se ha subido una cotización para este documento.</p>
+        }
+    </div>
+</div>

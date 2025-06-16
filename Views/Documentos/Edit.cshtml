@@ -1,0 +1,99 @@
+﻿@model Organizacional.Models.Documento
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>Documento</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="IdDocumento" />
+            <div class="form-group">
+                <label asp-for="TipoDocumento" class="control-label"></label>
+                <input asp-for="TipoDocumento" class="form-control" />
+                <span asp-validation-for="TipoDocumento" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="NumeroDocumento" class="control-label"></label>
+                <input asp-for="NumeroDocumento" class="form-control" />
+                <span asp-validation-for="NumeroDocumento" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Descripcion" class="control-label"></label>
+                <input asp-for="Descripcion" class="form-control" />
+                <span asp-validation-for="Descripcion" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FechaGeneracion" class="control-label"></label>
+                <input asp-for="FechaGeneracion" class="form-control" />
+                <span asp-validation-for="FechaGeneracion" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FechaSubida" class="control-label"></label>
+                <input asp-for="FechaSubida" class="form-control" />
+                <span asp-validation-for="FechaSubida" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ArchivoUrl" class="control-label"></label>
+                <input asp-for="ArchivoUrl" class="form-control" />
+                <span asp-validation-for="ArchivoUrl" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IdUsuarioSubio" class="control-label"></label>
+                <select asp-for="IdUsuarioSubio" class="form-control" asp-items="ViewBag.IdUsuarioSubio"></select>
+                <span asp-validation-for="IdUsuarioSubio" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Asignada" class="control-label"></label>
+                <input asp-for="Asignada" class="form-control" />
+                <span asp-validation-for="Asignada" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="EmpresaDestino" class="control-label"></label>
+                <input asp-for="EmpresaDestino" class="form-control" />
+                <span asp-validation-for="EmpresaDestino" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Suministro" class="control-label"></label>
+                <input asp-for="Suministro" class="form-control" />
+                <span asp-validation-for="Suministro" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Instalacion" class="control-label"></label>
+                <input asp-for="Instalacion" class="form-control" />
+                <span asp-validation-for="Instalacion" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Mantenimiento" class="control-label"></label>
+                <input asp-for="Mantenimiento" class="form-control" />
+                <span asp-validation-for="Mantenimiento" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FechaInicio" class="control-label"></label>
+                <input asp-for="FechaInicio" class="form-control" />
+                <span asp-validation-for="FechaInicio" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FechaFin" class="control-label"></label>
+                <input asp-for="FechaFin" class="form-control" />
+                <span asp-validation-for="FechaFin" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

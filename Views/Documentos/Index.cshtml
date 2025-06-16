@@ -1,0 +1,113 @@
+﻿@model IEnumerable<Organizacional.Models.Documento>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.TipoDocumento)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.NumeroDocumento)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Descripcion)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.FechaGeneracion)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.FechaSubida)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ArchivoUrl)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Asignada)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.EmpresaDestino)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Suministro)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Instalacion)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Mantenimiento)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.FechaInicio)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.FechaFin)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IdUsuarioSubioNavigation)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.TipoDocumento)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.NumeroDocumento)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Descripcion)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.FechaGeneracion)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.FechaSubida)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ArchivoUrl)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Asignada)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.EmpresaDestino)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Suministro)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Instalacion)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Mantenimiento)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.FechaInicio)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.FechaFin)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IdUsuarioSubioNavigation.IdUsuario)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.IdDocumento">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.IdDocumento">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.IdDocumento">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

@@ -1,0 +1,123 @@
+﻿@model Organizacional.Models.ViewModels.DocumentoFormViewModel
+
+@{
+    ViewData["Title"] = "Subir nuevo pendiente";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="Crear" enctype="multipart/form-data" method="post">
+    <div class="form-group">
+        <label asp-for="TipoDocumento" class="control-label"></label>
+        <select asp-for="TipoDocumento" class="form-control" id="TipoDocumento">
+            <option value="">-- Seleccionar tipo --</option>
+            <option value="Orden">Orden</option>
+            <option value="Contrato">Contrato</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="NumeroDocumento" class="control-label"></label>
+        <input asp-for="NumeroDocumento" class="form-control" />
+    </div>
+
+    <div class="form-group fecha-generacion">
+        <label asp-for="FechaGeneracion" class="control-label"></label>
+        <input asp-for="FechaGeneracion" type="date" class="form-control" />
+    </div>
+
+    <div class="form-group fecha-inicio">
+        <label asp-for="FechaInicio" class="control-label"></label>
+        <input asp-for="FechaInicio" type="date" class="form-control" />
+    </div>
+
+    <div class="form-group fecha-fin">
+        <label asp-for="FechaFin" class="control-label"></label>
+        <input asp-for="FechaFin" type="date" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Descripcion" class="control-label"></label>
+        <textarea asp-for="Descripcion" class="form-control"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="EmpresaDestino" class="control-label"></label>
+        <input asp-for="EmpresaDestino" class="form-control" />
+    </div>
+
+    <div class="form-group form-check">
+        <input asp-for="Suministro" class="form-check-input" id="Suministro" />
+        <label asp-for="Suministro" class="form-check-label">Suministro</label>
+    </div>
+
+    <div class="form-group form-check">
+        <input asp-for="Instalacion" class="form-check-input" id="Instalacion" />
+        <label asp-for="Instalacion" class="form-check-label">Instalación</label>
+    </div>
+
+    <div class="form-group form-check">
+        <input asp-for="Mantenimiento" class="form-check-input" id="Mantenimiento" />
+        <label asp-for="Mantenimiento" class="form-check-label">Mantenimiento</label>
+    </div>
+
+    <div id="mantenimientoCampos" style="display:none;">
+        <div class="form-group">
+            <label asp-for="CantidadMantenimientos">Cantidad de Mantenimientos</label>
+            <input asp-for="CantidadMantenimientos" class="form-control" type="number" min="1" />
+        </div>
+
+        <div class="form-group">
+            <label asp-for="PeriodicidadMantenimientos">Periodicidad (en días)</label>
+            <input asp-for="PeriodicidadMantenimientos" class="form-control" type="number" min="1" />
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="archivoPdf">Documento PDF</label>
+        <input type="file" name="archivoPdf" class="form-control" accept=".pdf" required />
+    </div>
+
+    <div class="form-group">
+        <label for="archivoCotizacionPdf">Cotización PDF</label>
+        <input type="file" name="archivoCotizacionPdf" class="form-control" accept=".pdf" required />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Subir</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
+
+@section Scripts {
+    <script>
+        function toggleFechas() {
+            const tipo = document.getElementById("TipoDocumento").value;
+            document.querySelector(".fecha-generacion").style.display = tipo === "Contrato" ? "none" : "block";
+            document.querySelector(".fecha-inicio").style.display = tipo === "Contrato" ? "block" : "none";
+            document.querySelector(".fecha-fin").style.display = tipo === "Contrato" ? "block" : "none";
+        }
+
+        function toggleTecnico() {
+            const inst = document.getElementById("Instalacion").checked;
+            const mant = document.getElementById("Mantenimiento").checked;
+            // Aquí puedes mostrar algo si quieres (por ahora no hay técnicoAsignado div activo)
+        }
+
+        function toggleMantenimientoCampos() {
+            const mant = document.getElementById("Mantenimiento").checked;
+            document.getElementById("mantenimientoCampos").style.display = mant ? "block" : "none";
+        }
+
+        document.getElementById("TipoDocumento").addEventListener("change", toggleFechas);
+        document.getElementById("Instalacion").addEventListener("change", toggleTecnico);
+        document.getElementById("Mantenimiento").addEventListener("change", () => {
+            toggleTecnico();
+            toggleMantenimientoCampos();
+        });
+
+        window.onload = () => {
+            toggleFechas();
+            toggleTecnico();
+            toggleMantenimientoCampos();
+        };
+    </script>
+}

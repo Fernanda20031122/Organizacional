@@ -1,0 +1,84 @@
+﻿@model List<Organizacional.Models.ViewModels.DashboardItemViewModel>
+
+@{
+    ViewData["Title"] = "Dashboard Pendientes";
+}
+
+<h2>Listado de Pendientes</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Tipo de Servicio</th>
+            <th>Estado</th>
+            <th>Subido por</th>
+            <th>Fecha subida</th>
+            <th>Días transcurridos</th>
+            <th>Técnico Asignado</th>
+            <th>Progreso</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.NumeroDocumento</td>
+                <td>@item.Servicios</td> 
+                <td>@item.Estado</td>
+                <td>@item.SubidoPor</td>
+                <td>
+                    @(item.FechaSubida == DateTime.MinValue
+                        ? "No registrada"
+                        : item.FechaSubida.ToString("dd/MM/yyyy"))
+                </td>
+                <td>
+                    @(item.Tipo == "Contrato"
+                        ? $"{item.DiasTranscurridosContrato} días"
+                        : $"{item.DiasTranscurridos} días")
+                </td>
+                <td>@item.TecnicoAsignado</td>
+                <td>
+                    @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
+                    {
+                        string barraColor = "bg-success";
+
+                        if (item.PorcentajeProgreso >= 100)
+                        {
+                            barraColor = "bg-primary";  // Completado
+                        }
+                        else if (item.PorcentajeProgreso > 80)
+                        {
+                            barraColor = "bg-danger";   // Alerta
+                        }
+                        else if (item.PorcentajeProgreso > 50)
+                        {
+                            barraColor = "bg-warning";  // Precaución
+                        }
+
+                        <div class="progress"
+                            title="Fecha Inicio: @(item.FechaInicio?.ToString("dd/MM/yyyy") ?? "N/A") - Fecha Fin: @(item.FechaFin?.ToString("dd/MM/yyyy") ?? "N/A")">
+                            <div class="progress-bar @barraColor" role="progressbar"
+                                 style="width: @item.PorcentajeProgreso%;"
+                                 aria-valuenow="@item.PorcentajeProgreso"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                        <span style="font-weight: bold; color: black;">
+                            @item.PorcentajeProgreso% (@item.DiasTranscurridosContrato de @item.DiasTotalesContrato días)
+                        </span>
+                    }
+                    else
+                    {
+                        <span>N/A</span>
+                    }
+                </td>
+                <td>
+                    <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-info">Ver Detalle</a>
+                </td>
+            </tr>
+        }
+        <a asp-action="Crear" class="btn btn-success mb-3">Subir nuevo pendiente</a>
+    </tbody>
+</table>

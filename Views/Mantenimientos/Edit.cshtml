@@ -1,0 +1,49 @@
+﻿@model Organizacional.Models.Mantenimiento
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>Mantenimiento</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            <div class="form-group">
+                <label asp-for="IdDocumento" class="control-label"></label>
+                <select asp-for="IdDocumento" class="form-control" asp-items="ViewBag.IdDocumento"></select>
+                <span asp-validation-for="IdDocumento" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TotalMantenimientos" class="control-label"></label>
+                <input asp-for="TotalMantenimientos" class="form-control" />
+                <span asp-validation-for="TotalMantenimientos" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="MantenimientoRealizado" class="control-label"></label>
+                <input asp-for="MantenimientoRealizado" class="form-control" />
+                <span asp-validation-for="MantenimientoRealizado" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ProximoMantenimiento" class="control-label"></label>
+                <input asp-for="ProximoMantenimiento" class="form-control" />
+                <span asp-validation-for="ProximoMantenimiento" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
