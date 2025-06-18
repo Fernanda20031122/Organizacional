@@ -49,15 +49,15 @@ jobs:
 
     - name: Write SSH key to file
       run: |
-        echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > /tmp/lightsail.pem
-        chmod 600 /tmp/lightsail.pem
+        echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > $GITHUB_WORKSPACE/lightsail.pem
+        chmod 600 $GITHUB_WORKSPACE/lightsail.pem
 
     - name: Copy files via SSH
       uses: appleboy/scp-action@v0.1.2
       with:
         host: ${{ secrets.LIGHTSAIL_HOST }}
         username: ${{ secrets.LIGHTSAIL_USER }}
-        key_path: /tmp/lightsail.pem
+        key_path: ${{ github.workspace }}/lightsail.pem
         port: 22
         source: "deploy/"
         target: "/home/ubuntu/Organizacional/publish/"
