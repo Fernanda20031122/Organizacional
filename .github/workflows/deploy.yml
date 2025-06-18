@@ -47,12 +47,17 @@ jobs:
         name: publish
         path: ./deploy
 
+    - name: Write SSH key to file
+      run: |
+        echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > /tmp/lightsail.pem
+        chmod 600 /tmp/lightsail.pem
+
     - name: Copy files via SSH
       uses: appleboy/scp-action@v0.1.2
       with:
         host: ${{ secrets.LIGHTSAIL_HOST }}
         username: ${{ secrets.LIGHTSAIL_USER }}
-        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        key_path: /tmp/lightsail.pem
         port: 22
         source: "deploy/"
         target: "/home/ubuntu/Organizacional/publish/"
