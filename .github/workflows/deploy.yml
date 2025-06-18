@@ -48,15 +48,15 @@ jobs:
         path: ./deploy
 
     - name: Copy files via SSH
-      uses: appleboy/ssh-action@v0.1.7
+      uses: appleboy/scp-action@v0.1.2
       with:
         host: ${{ secrets.LIGHTSAIL_HOST }}
         username: ${{ secrets.LIGHTSAIL_USER }}
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
         port: 22
-        source: "./deploy/"
+        source: "deploy/"
         target: "/home/ubuntu/Organizacional/publish/"
-        rsync_opts: "-avz --delete"
+        rm: true
 
     - name: Restart service
       uses: appleboy/ssh-action@v0.1.7
@@ -64,5 +64,6 @@ jobs:
         host: ${{ secrets.LIGHTSAIL_HOST }}
         username: ${{ secrets.LIGHTSAIL_USER }}
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        port: 22
         script: |
           sudo systemctl restart organiza.service
