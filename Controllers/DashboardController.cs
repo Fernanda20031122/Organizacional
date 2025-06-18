@@ -27,13 +27,6 @@ namespace Organizacional.Controllers
 
             var modelo = documentos.Select(d => new DashboardItemViewModel
             {
-                Servicios = string.Join(" ",
-                    new[]{
-                        d.Suministro.GetValueOrDefault() ? "Suministro" : null,
-                        d.Instalacion.GetValueOrDefault() ? "Instalación" : null,
-                        d.Mantenimiento.GetValueOrDefault() ? "Mantenimiento" : null
-                    }.Where(s => s != null)
-                ),
                 FechaInicio = d.FechaInicio?.ToDateTime(TimeOnly.MinValue),
                 FechaFin = d.FechaFin?.ToDateTime(TimeOnly.MinValue),
                 IdDocumento = d.IdDocumento,
@@ -66,7 +59,13 @@ namespace Organizacional.Controllers
 
                 TecnicoAsignado = (d.Suministro.GetValueOrDefault() || d.Instalacion.GetValueOrDefault() || d.Mantenimiento.GetValueOrDefault())
                     ? d.Tareas.FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado"
-                    : "N/A"
+                    : "N/A",
+
+                // Estos los usas para mostrar viñetas o íconos en la vista
+                Suministro = d.Suministro ?? false,
+                Instalacion = d.Instalacion ?? false,
+                Mantenimiento = d.Mantenimiento ?? false
+
             }).ToList();
 
             return View(modelo);
