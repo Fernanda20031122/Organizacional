@@ -2,83 +2,151 @@
 
 @{
     ViewData["Title"] = "Dashboard Pendientes";
+    Layout = null; // IMPORTANTE: Desactiva layout si no estás usando uno
 }
 
-<h2>Listado de Pendientes</h2>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"]</title>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Tipo de Servicio</th>
-            <th>Estado</th>
-            <th>Subido por</th>
-            <th>Fecha subida</th>
-            <th>Días transcurridos</th>
-            <th>Técnico Asignado</th>
-            <th>Progreso</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.NumeroDocumento</td>
-                <td>@item.Servicios</td> 
-                <td>@item.Estado</td>
-                <td>@item.SubidoPor</td>
-                <td>
-                    @(item.FechaSubida == DateTime.MinValue
-                        ? "No registrada"
-                        : item.FechaSubida.ToString("dd/MM/yyyy"))
-                </td>
-                <td>
-                    @(item.Tipo == "Contrato"
-                        ? $"{item.DiasTranscurridosContrato} días"
-                        : $"{item.DiasTranscurridos} días")
-                </td>
-                <td>@item.TecnicoAsignado</td>
-                <td>
-                    @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
-                    {
-                        string barraColor = "bg-success";
+    <!-- ✅ Bootstrap CSS (si no lo tienes) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-                        if (item.PorcentajeProgreso >= 100)
-                        {
-                            barraColor = "bg-primary";  // Completado
-                        }
-                        else if (item.PorcentajeProgreso > 80)
-                        {
-                            barraColor = "bg-danger";   // Alerta
-                        }
-                        else if (item.PorcentajeProgreso > 50)
-                        {
-                            barraColor = "bg-warning";  // Precaución
-                        }
+    <!-- ✅ Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+</head>
+<body>
 
-                        <div class="progress"
-                            title="Fecha Inicio: @(item.FechaInicio?.ToString("dd/MM/yyyy") ?? "N/A") - Fecha Fin: @(item.FechaFin?.ToString("dd/MM/yyyy") ?? "N/A")">
-                            <div class="progress-bar @barraColor" role="progressbar"
-                                 style="width: @item.PorcentajeProgreso%;"
-                                 aria-valuenow="@item.PorcentajeProgreso"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100">
-                            </div>
-                        </div>
-                        <span style="font-weight: bold; color: black;">
-                            @item.PorcentajeProgreso% (@item.DiasTranscurridosContrato de @item.DiasTotalesContrato días)
-                        </span>
-                    }
-                    else
-                    {
-                        <span>N/A</span>
-                    }
-                </td>
-                <td>
-                    <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-info">Ver Detalle</a>
-                </td>
-            </tr>
-        }
-        <a asp-action="Crear" class="btn btn-success mb-3">Subir nuevo pendiente</a>
-    </tbody>
-</table>
+    <div class="container mt-4">
+        <h2>Listado de Pendientes</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Tipo de Servicio</th>
+                    <th>Estado</th>
+                    <th>Subido por</th>
+                    <th>Fecha subida</th>
+                    <th>Días transcurridos</th>
+                    <th>Técnico Asignado</th>
+                    <th>Progreso</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.NumeroDocumento</td>
+                        <td>
+                            @if (item.Suministro)
+                            {
+                                <i class="bi bi-box-seam text-primary me-1" data-bs-toggle="tooltip" title="Suministro"></i>
+                            }
+                            @if (item.Instalacion)
+                            {
+                                <i class="bi bi-tools text-success me-1" data-bs-toggle="tooltip" title="Instalación"></i>
+                            }
+                            @if (item.Mantenimiento)
+                            {
+                                <i class="bi bi-wrench-adjustable text-warning me-1" data-bs-toggle="tooltip" title="Mantenimiento"></i>
+                            }
+                    </td>
+                     <td>
+                            @switch (item.Estado?.ToLower())
+                            {
+                                case "pendiente":
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                    ;
+                                    break;
+                                case "en proceso":
+                                    <span class="badge bg-info text-dark">En Proceso</span>
+                                    ;
+                                    break;
+                                case "completado":
+                                    <span class="badge bg-success">Completado</span>
+                                    ;
+                                    break;
+                                case "cancelado":
+                                    <span class="badge bg-danger">Cancelado</span>
+                                    ;
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary">Desconocido</span>
+                                    ;
+                                    break;
+                            }
+                    </td>
+                    <td>@item.SubidoPor</td>
+                    <td>
+                        @(item.FechaSubida == DateTime.MinValue
+                                                ? "No registrada"
+                                                : item.FechaSubida.ToString("dd/MM/yyyy"))
+                                                                                      </td>
+                                                                                      <td>
+                        @(item.Tipo == "Contrato"
+                                                ? $"{item.DiasTranscurridosContrato} días"
+                                                : $"{item.DiasTranscurridos} días")
+                    </td>
+                    <td>@item.TecnicoAsignado</td>
+                    <td>
+                        @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
+                            {
+                                string barraColor = "bg-success";
+
+                                if (item.PorcentajeProgreso >= 100)
+                                {
+                                    barraColor = "bg-primary";  // Completado
+                                }
+                                else if (item.PorcentajeProgreso > 80)
+                                {
+                                    barraColor = "bg-danger";   // Alerta
+                                }
+                                else if (item.PorcentajeProgreso > 50)
+                                {
+                                    barraColor = "bg-warning";  // Precaución
+                                }
+
+                                <div class="progress"
+                                     title="Fecha Inicio: @(item.FechaInicio?.ToString("dd/MM/yyyy") ?? "N/A") - Fecha Fin: @(item.FechaFin?.ToString("dd/MM/yyyy") ?? "N/A")">
+                                    <div class="progress-bar @barraColor" role="progressbar"
+                                         style="width: @item.PorcentajeProgreso%;"
+                                         aria-valuenow="@item.PorcentajeProgreso"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <span style="font-weight: bold; color: black;">
+                                    @item.PorcentajeProgreso% (@item.DiasTranscurridosContrato de @item.DiasTotalesContrato días)
+                                </span>
+                            }
+                            else
+                            {
+                                <span>N/A</span>
+                            }
+                        </td>
+                        <td>
+                            <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-info">Ver Detalle</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <a asp-action="Crear" class="btn btn-success mb-3">Subir nuevo pendiente</a>
+        </table>
+    </div>
+
+    <!-- Scripts para tooltips de Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
+
+</body>
+</html>
