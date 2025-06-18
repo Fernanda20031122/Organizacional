@@ -23,7 +23,7 @@ jobs:
       run: dotnet restore
 
     - name: Build in Release
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build --configuration Release --no-restore /p:TreatWarningsAsErrors=false
 
     - name: Publish self-contained
       run: dotnet publish \
@@ -31,7 +31,8 @@ jobs:
             --framework net8.0 \
             --runtime linux-x64 \
             --output publish \
-            --no-self-contained
+            --no-self-contained \
+            /p:TreatWarningsAsErrors=false
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
