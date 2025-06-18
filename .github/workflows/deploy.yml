@@ -1,0 +1,72 @@
+name: CI/CD Lightsail ASP.NET
+
+# Se ejecuta en cada push a main
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build in Release
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Publish self-contained
+      run: dotnet publish \
+            --configuration Release \
+            --framework net8.0 \
+            --runtime linux-x64 \
+            --output publish \
+            --no-self-contained
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: publish
+        path: publish/
+
+  deploy:
+    name: Deploy to Lightsail
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: publish
+        path: ./deploy
+
+    - name: Copy files via SSH
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USER }}
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        port: 22
+        source: "./deploy/"
+        target: "/home/ubuntu/Organizacional/publish/"
+
+    - name: Restart service
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USER }}
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        script: |
+          sudo systemctl restart organiza.service
