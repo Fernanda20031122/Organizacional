@@ -26,13 +26,7 @@ jobs:
       run: dotnet build --configuration Release --no-restore /p:TreatWarningsAsErrors=false
 
     - name: Publish self-contained
-      run: dotnet publish \
-            --configuration Release \
-            --framework net8.0 \
-            --runtime linux-x64 \
-            --output publish \
-            --no-self-contained \
-            /p:TreatWarningsAsErrors=false
+      run: dotnet publish --configuration Release --framework net8.0 --runtime linux-x64 --output publish --no-self-contained /p:TreatWarningsAsErrors=false
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
