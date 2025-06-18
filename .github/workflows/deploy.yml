@@ -56,6 +56,7 @@ jobs:
         port: 22
         source: "./deploy/"
         target: "/home/ubuntu/Organizacional/publish/"
+        rsync_opts: "-avz --delete"
 
     - name: Restart service
       uses: appleboy/ssh-action@v0.1.7
