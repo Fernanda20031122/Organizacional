@@ -35,35 +35,13 @@ jobs:
         path: publish/
 
   deploy:
-    name: Deploy to Lightsail
+    name: Deploy to Lightsail via SSH
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
 
     steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: publish
-        path: ./deploy
-
-    - name: Write SSH key to file
-      run: |
-        echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > $GITHUB_WORKSPACE/lightsail.pem
-        chmod 600 $GITHUB_WORKSPACE/lightsail.pem
-
-    - name: Copy files via SSH
-      uses: appleboy/scp-action@v0.1.2
-      with:
-        host: ${{ secrets.LIGHTSAIL_HOST }}
-        username: ${{ secrets.LIGHTSAIL_USER }}
-        key_path: ${{ github.workspace }}/lightsail.pem
-        port: 22
-        source: "deploy/"
-        target: "/home/ubuntu/Organizacional/publish/"
-        rm: true
-
-    - name: Restart service
+    - name: Execute remote deploy commands
       uses: appleboy/ssh-action@v0.1.7
       with:
         host: ${{ secrets.LIGHTSAIL_HOST }}
@@ -71,4 +49,9 @@ jobs:
         key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
         port: 22
         script: |
+          set -e
+          cd /home/ubuntu/Organizacional
+          git reset --hard origin/master
+          git pull origin master
+          dotnet publish ./Organizacional.csproj --configuration Release --framework net8.0 --runtime linux-x64 --output ./publish --no-self-contained
           sudo systemctl restart organiza.service
