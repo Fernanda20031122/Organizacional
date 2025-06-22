@@ -53,7 +53,8 @@ jobs:
           cd /home/ubuntu/Organizacional
           git reset --hard origin/master
           git pull origin master
-          dotnet publish ./Organizacional.csproj --configuration Release --framework net8.0 --runtime linux-x64 --output ./publish --no-self-contained
+          echo "Publicando app..."
+          dotnet publish ./Organizacional.csproj --configuration Release --output ./publish
           echo "Publicación completada"
           sudo systemctl restart organiza.service
           echo "Servicio reiniciado"
