@@ -1,147 +1,158 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Organizacional.Data;
-using Organizacional.Models;
-using Organizacional.Models.ViewModels;
+@model List<Organizacional.Models.ViewModels.DashboardItemViewModel>
 
-namespace Organizacional.Controllers
-{
-    public class AuthController : Controller
-    {
-        private readonly OrganizacionalContext _context;
-
-        public AuthController(OrganizacionalContext context)
-        {
-            _context = context;
-        }
-
-        [HttpGet]
-        public IActionResult Login()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Login(LoginViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Correo == model.Correo && u.Contrasena == model.Contrasena);
-
-            if (usuario == null)
-            {
-                ModelState.AddModelError(string.Empty, "Credenciales inválidas.");
-                return View(model);
-            }
-            if (usuario.Estado != "activo")
-            {
-                ModelState.AddModelError("", "Usuario inactivo");
-                return View();
-            }
-
-            if (usuario.DebeCambiarContrasena == true)
-            {
-                return RedirectToAction("CambiarContrasenaInicial", new { id = usuario.IdUsuario });
-            }
-
-            // Guardar datos en sesión
-            HttpContext.Session.SetString("NombreUsuario", usuario.Nombre ?? "");
-            HttpContext.Session.SetInt32("IdUsuario", usuario.IdUsuario);
-            HttpContext.Session.SetInt32("Rol", usuario.IdRol?? 0);
-
-            // Redirigir por rol
-            if (usuario.IdRol == 1) return RedirectToAction("Index", "Dashboard"); // Admin
-            if (usuario.IdRol == 2) return RedirectToAction("Index", "Tareas");    // Técnico
-
-            return RedirectToAction("Index", "Home");
-        }
-
-        [HttpGet]
-        public IActionResult OlvidoContrasena()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> OlvidoContrasena(string correo)
-        {
-            if (string.IsNullOrEmpty(correo))
-            {
-                ModelState.AddModelError("", "Debes ingresar un correo.");
-                return View();
-            }
-
-            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Correo == correo);
-            if (usuario == null)
-            {
-                ModelState.AddModelError("", "Correo no encontrado.");
-                return View();
-            }
-
-            // Marcar para cambio de contraseña
-            usuario.DebeCambiarContrasena = true;
-            await _context.SaveChangesAsync();
-
-            TempData["Mensaje"] = "Se ha marcado tu cuenta para cambiar contraseña. Ingresa normalmente para continuar.";
-            return RedirectToAction("Login");
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> CambiarContrasenaInicial(int id)
-        {
-            var usuario = await _context.Usuarios.FindAsync(id);
-            if (usuario == null) return NotFound();
-
-            var modelo = new CambiarContrasenaViewModel
-            {
-                IdUsuario = id,
-                Correo = usuario.Correo ?? ""
-            };
-
-            return View(modelo);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> CambiarContrasenaInicial(CambiarContrasenaViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            if (model.IdUsuario == 0)
-            {
-                ModelState.AddModelError("", "ID de usuario no válido.");
-                return View(model);
-            }
-
-            var usuario = await _context.Usuarios.FindAsync(model.IdUsuario);
-            if (usuario == null)
-            {
-                ModelState.AddModelError("", "Usuario no encontrado.");
-                return View(model);
-            }
-
-            if (usuario.DebeCambiarContrasena != true)
-            {
-                TempData["Mensaje"] = "⚠️ Este usuario no requiere cambiar la contraseña.";
-                return RedirectToAction("Login");
-            }
-
-            if (model.NuevaContrasena != model.ConfirmarContrasena)
-            {
-                ModelState.AddModelError("ConfirmarContrasena", "Las contraseñas no coinciden.");
-                return View(model);
-            }
-
-            // 🔒 Aquí se realiza el cambio
-            usuario.Contrasena = model.NuevaContrasena;
-            usuario.DebeCambiarContrasena = false;
-            await _context.SaveChangesAsync();
-
-            TempData["Mensaje"] = "✅ Contraseña actualizada correctamente.";
-            return RedirectToAction("Login");
-        }
-    }
+@{
+    ViewData["Title"] = "Dashboard Pendientes";
+    Layout = null; // IMPORTANTE: Desactivado layout
 }
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- ✅ Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- ✅ Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+</head>
+<body>
+
+    <div class="container mt-4">
+        <h2>Listado de Pendientes</h2> <br /> <br />
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Tipo de Servicio</th>
+                    <th>Estado</th>
+                    <th>Subido por</th>
+                    <th>Fecha subida</th>
+                    <th>Días transcurridos</th>
+                    <th>Técnico Asignado</th>
+                    <th>Progreso</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.NumeroDocumento</td>
+                        <td>
+                            @if (item.Suministro)
+                            {
+                                <i class="bi bi-box-seam text-primary me-1" data-bs-toggle="tooltip" title="Suministro"></i>
+                            }
+                            @if (item.Instalacion)
+                            {
+                                <i class="bi bi-tools text-success me-1" data-bs-toggle="tooltip" title="Instalación"></i>
+                            }
+                            @if (item.Mantenimiento)
+                            {
+                                <i class="bi bi-wrench-adjustable text-warning me-1" data-bs-toggle="tooltip" title="Mantenimiento"></i>
+                            }
+                        </td>
+                        <td>
+                            @switch (item.Estado?.Trim().ToLower())
+                            {
+                                case "pendiente":
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                    ;
+                                    break;
+                                case "en_proceso":
+                                    <span class="badge bg-info text-dark">En Proceso</span>
+                                    ;
+                                    break;
+                                case "completado":
+                                    <span class="badge bg-success">Completado</span>
+                                    ;
+                                    break;
+                                case "cancelado":
+                                    <span class="badge bg-danger">Cancelado</span>
+                                    ;
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary">Desconocido</span>
+                                    ;
+                                    break;
+                            }
+                    </td>
+                    <td>@item.SubidoPor</td>
+                    <td>
+                        @(item.FechaSubida == DateTime.MinValue
+                                                ? "No registrada"
+                                                : item.FechaSubida.ToString("dd/MM/yyyy"))
+                                                                                      </td>
+                                                                                      <td>
+                        @(item.Tipo == "Contrato"
+                                                ? $"{item.DiasTranscurridosContrato} días"
+                                                : $"{item.DiasTranscurridos} días")
+                    </td>
+                    <td>@item.TecnicoAsignado</td>
+                    <td>
+                        @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
+                            {
+                                string barraColor = "bg-success";
+
+                                if (item.PorcentajeProgreso >= 100)
+                                {
+                                    barraColor = "bg-primary";  // Completado
+                                }
+                                else if (item.PorcentajeProgreso > 80)
+                                {
+                                    barraColor = "bg-danger";   // Alerta
+                                }
+                                else if (item.PorcentajeProgreso > 50)
+                                {
+                                    barraColor = "bg-warning";  // Precaución
+                                }
+
+                                <div class="progress"
+                                     title="Fecha Inicio: @(item.FechaInicio?.ToString("dd/MM/yyyy") ?? "N/A") - Fecha Fin: @(item.FechaFin?.ToString("dd/MM/yyyy") ?? "N/A")">
+                                    <div class="progress-bar @barraColor" role="progressbar"
+                                         style="width: @item.PorcentajeProgreso%;"
+                                         aria-valuenow="@item.PorcentajeProgreso"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <span style="font-weight: bold; color: black;">
+                                    @item.PorcentajeProgreso% (@item.DiasTranscurridosContrato de @item.DiasTotalesContrato días)
+                                </span>
+                            }
+                            else
+                            {
+                                <span>N/A</span>
+                            }
+                        </td>
+                        <td>
+                            <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-info">Ver Detalle</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <a asp-action="Crear" class="btn btn-success mb-3">Subir nuevo pendiente</a>
+            <form asp-action="Logout" asp-controller="Auth" method="post" class="btn btn-outline-danger">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="bi bi-box-arrow-right">Cerrar sesión</button>
+            </form>
+        </table>
+        <br />
+        <br />
+    </div>
+
+    <!-- Scripts para tooltips de Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
+
+</body>
+</html>
