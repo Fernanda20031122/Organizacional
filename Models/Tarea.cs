@@ -15,7 +15,7 @@ public partial class Tarea
 
     public DateOnly? FechaEjecucion { get; set; }
 
-    public string? Estado { get; set; }
+    public string Estado { get; set; } = "Pendiente";
 
     public bool? Completada { get; set; }
 

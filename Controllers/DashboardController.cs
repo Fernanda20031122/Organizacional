@@ -27,6 +27,7 @@ namespace Organizacional.Controllers
 
             var modelo = documentos.Select(d => new DashboardItemViewModel
             {
+                Estado = d.Tareas.FirstOrDefault()?.Estado ?? "Pendiente",
                 FechaInicio = d.FechaInicio?.ToDateTime(TimeOnly.MinValue),
                 FechaFin = d.FechaFin?.ToDateTime(TimeOnly.MinValue),
                 IdDocumento = d.IdDocumento,
@@ -172,6 +173,19 @@ namespace Organizacional.Controllers
             return View(documento);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> CambiarEstadoTarea(int idTarea, string nuevoEstado)
+        {
+            var tarea = await _context.Tareas.FindAsync(idTarea);
+            if (tarea == null)
+                return NotFound();
+
+            tarea.Estado = nuevoEstado;
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Detalle", new { id = tarea.IdDocumento });
+        }
+
         [HttpGet]
         public async Task<IActionResult> AsignarTecnico(int id)
         {
@@ -213,7 +227,7 @@ namespace Organizacional.Controllers
 
             return RedirectToAction(nameof(Detalle), new { id = idDocumento });
         }
-            
+
         [HttpGet]
         public async Task<IActionResult> RegistrarMantenimiento(int id)
         {
@@ -254,6 +268,7 @@ namespace Organizacional.Controllers
             await _context.SaveChangesAsync();
             return RedirectToAction("Detalle", new { id = mantenimiento.IdDocumento });
         }
+
         [HttpPost]
         public async Task<IActionResult> ActualizarProximoMantenimiento(int id, DateOnly? nuevaFecha)
         {

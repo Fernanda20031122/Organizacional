@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSession();
 
 builder.Services.AddDbContext<OrganizacionalContext>(optionsBuilder =>
     optionsBuilder.UseMySql(builder.Configuration.GetConnectionString("conexion"), Microsoft.EntityFrameworkCore.ServerVersion.Parse("10.4.32-mariadb")));
@@ -22,11 +23,14 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseSession();
+
+app.UseAuthorization();
 
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+    pattern: "{controller=Auth}/{action=Login}/{id?}");
 
 app.Run();

@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Dashboard Pendientes";
-    Layout = null; // IMPORTANTE: Desactiva layout si no estás usando uno
+    Layout = null; // IMPORTANTE: Desactivado layout
 }
 
 <!DOCTYPE html>
@@ -20,7 +20,7 @@
 <body>
 
     <div class="container mt-4">
-        <h2>Listado de Pendientes</h2>
+        <h2>Listado de Pendientes</h2> <br /> <br />
 
         <table class="table">
             <thead>
@@ -54,15 +54,15 @@
                             {
                                 <i class="bi bi-wrench-adjustable text-warning me-1" data-bs-toggle="tooltip" title="Mantenimiento"></i>
                             }
-                    </td>
-                     <td>
-                            @switch (item.Estado?.ToLower())
+                        </td>
+                        <td>
+                            @switch (item.Estado?.Trim().ToLower())
                             {
                                 case "pendiente":
                                     <span class="badge bg-warning text-dark">Pendiente</span>
                                     ;
                                     break;
-                                case "en proceso":
+                                case "en_proceso":
                                     <span class="badge bg-info text-dark">En Proceso</span>
                                     ;
                                     break;
@@ -135,6 +135,16 @@
                 }
             </tbody>
             <a asp-action="Crear" class="btn btn-success mb-3">Subir nuevo pendiente</a>
+            <form asp-controller="Auth" asp-action="Logout" class="btn btn-outline-danger">
+                @Html.AntiForgeryToken()
+                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+            </form>
+            <form asp-action="Logout" asp-controller="Auth" method="post" class="btn btn-outline-danger">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="bi bi-box-arrow-right">Cerrar sesión</button>
+            </form>
+            <br />
+            <br />
         </table>
     </div>
 

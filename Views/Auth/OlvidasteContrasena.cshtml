@@ -1,0 +1,19 @@
+﻿@model string
+@{
+    ViewData["Title"] = "¿Olvidaste tu contraseña?";
+}
+
+<h2>¿Olvidaste tu contraseña?</h2>
+
+<form asp-action="OlvidoContrasena" method="post">
+    <div class="mb-3">
+        <label for="correo" class="form-label">Correo electrónico</label>
+        <input type="email" name="correo" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Enviar</button>
+</form>
+
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-info mt-3">@TempData["Mensaje"]</div>
+}

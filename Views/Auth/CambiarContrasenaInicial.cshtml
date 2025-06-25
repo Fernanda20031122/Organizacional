@@ -1,0 +1,36 @@
+﻿@model Organizacional.Models.ViewModels.CambiarContrasenaViewModel
+
+@{
+    ViewData["Title"] = "Cambiar contraseña inicial";
+}
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-info">@TempData["Mensaje"]</div>
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="CambiarContrasenaInicial" asp-controller="Auth" method="post">
+    @Html.AntiForgeryToken() <!-- Protección contra ataques CSRF -->
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" }) <!-- Muestra errores generales -->
+
+    <input type="hidden" asp-for="IdUsuario" />
+
+    <div class="mb-3">
+        <label asp-for="NuevaContrasena" class="form-label"></label>
+        <input asp-for="NuevaContrasena" class="form-control" type="password" />
+        <span asp-validation-for="NuevaContrasena" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ConfirmarContrasena" class="form-label"></label>
+        <input asp-for="ConfirmarContrasena" class="form-control" type="password" />
+        <span asp-validation-for="ConfirmarContrasena" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Actualizar contraseña</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

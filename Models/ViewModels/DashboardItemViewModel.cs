@@ -4,6 +4,7 @@ namespace Organizacional.Models.ViewModels
 {
     public class DashboardItemViewModel
     {
+        public int? IdTarea { get; set; }
         public int IdDocumento { get; set; }
         public string Tipo { get; set; } = "";
         public string NumeroDocumento { get; set; } = "";

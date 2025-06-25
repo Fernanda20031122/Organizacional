@@ -15,16 +15,31 @@
     <p><strong>Descripción:</strong> @Model.Descripcion</p>
     <p><strong>Empresa Destino:</strong> @Model.EmpresaDestino</p>
     <p><strong>Subido por:</strong> @Model.IdUsuarioSubioNavigation?.Nombre</p>
-    <p><strong>Fecha de subida:</strong> @Model.FechaSubida</p>
+    <p>
+        <strong>Fecha de subida:</strong>
+        @(Model.FechaSubida.HasValue
+                ? Model.FechaSubida.Value.ToDateTime(TimeOnly.MinValue).ToString("dd/MM/yyyy")
+                : "No registrada")
+    </p>
 
     @if (Model.TipoDocumento == "Contrato")
     {
-        <p><strong>Fecha Inicio:</strong> @Model.FechaInicio</p>
-        <p><strong>Fecha Fin:</strong> @Model.FechaFin</p>
-    }
+        <p>
+            <strong>Fecha Inicio:</strong>
+            @(Model.FechaInicio.HasValue
+                    ? Model.FechaInicio.Value.ToDateTime(TimeOnly.MinValue).ToString("dd/MM/yyyy")
+                    : "No registrada")
+                                  </p>
+                                  <p>
+                                      <strong>Fecha Fin:</strong>
+            @(Model.FechaFin.HasValue
+                    ? Model.FechaFin.Value.ToDateTime(TimeOnly.MinValue).ToString("dd/MM/yyyy")
+                    : "No registrada")
+    </p>
+        }
     else
     {
-        <p><strong>Fecha Generación:</strong> @Model.FechaGeneracion</p>
+        <p><strong>Fecha Generación:</strong> @Model.FechaGeneracion?.ToString("dd/MM/yyyy")</p>
     }
 
     <p>
@@ -43,13 +58,42 @@
         </a>
     }
 </div>
+@if (Model.Tareas != null && Model.Tareas.Any())
+{
+    <h4>Estado del Pendiente</h4>
+    @foreach (var tarea in Model.Tareas)
+    {
+        <div class="mt-3">
+            <p>
+                <strong>Estado actual:</strong>
+                <span class="badge
+                                    @(tarea.Estado == "pendiente" ? "bg-warning text-dark" :
+                                                                tarea.Estado == "en_proceso" ? "bg-info text-dark" :
+                                                                tarea.Estado == "completado" ? "bg-success" :
+                                                                tarea.Estado == "cancelado" ? "bg-danger" : "bg-secondary")">
+            @tarea.Estado
+        </span>
+    </p>
+
+            <form asp-action="CambiarEstadoTarea" asp-controller="Dashboard" method="post" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="idTarea" value="@tarea.IdTarea" />
+                <select name="nuevoEstado" class="form-select w-auto">
+                    @Html.Raw($"<option value='pendiente' {(tarea.Estado == "pendiente" ? "selected" : "")}>Pendiente</option>")
+                    @Html.Raw($"<option value='en_proceso' {(tarea.Estado == "en_proceso" ? "selected" : "")}>En proceso</option>")
+                    @Html.Raw($"<option value='completado' {(tarea.Estado == "completado" ? "selected" : "")}>Completado</option>")
+                    @Html.Raw($"<option value='cancelado' {(tarea.Estado == "cancelado" ? "selected" : "")}>Cancelado</option>")
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm">Actualizar estado</button>
+            </form>
+        </div>
+    }
+}
 @if (tieneMantenimientos)
 {
     <h4>Mantenimientos</h4>
     <table class="table">
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Total Programados</th>
                 <th>Realizados</th>
                 <th>Fechas Realizadas</th>
@@ -61,7 +105,6 @@
             @foreach (var m in Model.Mantenimientos)
             {
                 <tr>
-                    <td>@m.Id</td>
                     <td>@m.TotalMantenimientos</td>
                     <td>@m.MantenimientoRealizado</td>
                     <td>

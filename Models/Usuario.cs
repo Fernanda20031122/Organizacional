@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Organizacional.Models;
 
@@ -16,6 +17,10 @@ public partial class Usuario
     public int? IdRol { get; set; }
 
     public string? Estado { get; set; }
+
+    [NotMapped]
+    public string? ContrasenaTemporal { get; set; }
+    public bool? DebeCambiarContrasena { get; set; } = true;
 
     public DateTime? FechaCreacion { get; set; }
 
