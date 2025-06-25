@@ -50,7 +50,7 @@ namespace Organizacional.Controllers
             // Guardar datos en sesión
             HttpContext.Session.SetString("NombreUsuario", usuario.Nombre ?? "");
             HttpContext.Session.SetInt32("IdUsuario", usuario.IdUsuario);
-            HttpContext.Session.SetInt32("Rol", usuario.IdRol?? 0);
+            HttpContext.Session.SetInt32("Rol", usuario.IdRol ?? 0);
 
             // Redirigir por rol
             if (usuario.IdRol == 1) return RedirectToAction("Index", "Dashboard"); // Admin
