@@ -135,10 +135,6 @@
                 }
             </tbody>
             <a asp-action="Crear" class="btn btn-success mb-3">Subir nuevo pendiente</a>
-            <form asp-controller="Auth" asp-action="Logout" class="btn btn-outline-danger">
-                @Html.AntiForgeryToken()
-                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
-            </form>
             <form asp-action="Logout" asp-controller="Auth" method="post" class="btn btn-outline-danger">
                 @Html.AntiForgeryToken()
                 <button type="submit" class="bi bi-box-arrow-right">Cerrar sesión</button>
