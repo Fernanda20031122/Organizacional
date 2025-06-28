@@ -2,6 +2,7 @@
 @using System.Text.Json
 @{
     ViewData["Title"] = "Detalle del Pendiente";
+    Layout = "_Layout";
     var tecnico = Model.Tareas.FirstOrDefault()?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado";
     var tieneMantenimientos = Model.Mantenimientos != null && Model.Mantenimientos.Any();
 }
@@ -93,6 +94,7 @@
     <h4>Mantenimientos</h4>
     <table class="table">
         <thead>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
             <tr>
                 <th>Total Programados</th>
                 <th>Realizados</th>
@@ -146,28 +148,31 @@
         </tbody>
     </table>
 }
-<div class="row">
-    <div class="col-md-6">
-        <h4>Documento PDF</h4>
-        @if (!string.IsNullOrEmpty(Model.ArchivoUrl))
-        {
-            <iframe src="@Model.ArchivoUrl" width="100%" height="500px"></iframe>
-        }
-        else
-        {
-            <p class="text-danger">No se ha subido un archivo para este documento.</p>
-        }
-    </div>
+@if (Context.Session.GetInt32("Rol") != 2) // Solo si NO es técnico
+{
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Documento PDF</h4>
+            @if (!string.IsNullOrEmpty(Model.ArchivoUrl))
+            {
+                <iframe src="@Model.ArchivoUrl" width="100%" height="500px"></iframe>
+            }
+            else
+            {
+                <p class="text-danger">No se ha subido un archivo para este documento.</p>
+            }
+        </div>
 
-    <div class="col-md-6">
-        <h4>Cotización PDF</h4>
-        @if (!string.IsNullOrEmpty(Model.CotizacionArchivoUrl))
-        {
-            <iframe src="@Model.CotizacionArchivoUrl" width="100%" height="500px"></iframe>
-        }
-        else
-        {
-            <p class="text-warning">No se ha subido una cotización para este documento.</p>
-        }
+        <div class="col-md-6">
+            <h4>Cotización PDF</h4>
+            @if (!string.IsNullOrEmpty(Model.CotizacionArchivoUrl))
+            {
+                <iframe src="@Model.CotizacionArchivoUrl" width="100%" height="500px"></iframe>
+            }
+            else
+            {
+                <p class="text-warning">No se ha subido una cotización para este documento.</p>
+            }
+        </div>
     </div>
-</div>
+}

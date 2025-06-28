@@ -2,14 +2,11 @@
 
 @{
     ViewData["Title"] = "Técnicos Registrados";
+    Layout = "_Layout";
 }
 
 <div class="container mt-4">
     <h2 class="mb-4">Técnicos Registrados</h2>
-
-    <a asp-action="CrearTecnico" class="btn btn-success mb-3">
-        <i class="bi bi-plus-circle"></i> Crear nuevo técnico
-    </a>
 
     @if (TempData["Mensaje"] != null)
     {
@@ -24,7 +21,8 @@
                 <th>Nombre</th>
                 <th>Correo</th>
                 <th>Estado</th>
-                <th>Fecha de creación</th>
+                <th>Rol</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -43,7 +41,18 @@
                             <span class="badge bg-secondary">Inactivo</span>
                         }
                     </td>
-                    <td>@usuario.FechaCreacion?.ToString("dd/MM/yyyy") ?? "No registrada"</td>
+                    <td>@usuario.IdRolNavigation?.NombreRol</td>
+                    <td>
+                        @if (usuario.IdUsuario != 1) // Evitar desactivar superadmin, opcional
+                        {
+                            <form asp-action="CambiarEstado" asp-controller="Usuarios" method="post" style="display:inline">
+                                <input type="hidden" name="idUsuario" value="@usuario.IdUsuario" />
+                                <button class="btn btn-sm @(usuario.Estado == "activo" ? "btn-danger" : "btn-success")">
+                                    @(usuario.Estado == "activo" ? "Desactivar" : "Activar")
+                                </button>
+                            </form>
+                        }
+                    </td>
 
                 </tr>
             }

@@ -1,59 +1,31 @@
-﻿@model IEnumerable<Organizacional.Models.Tarea>
+﻿@model List<Organizacional.Models.Tarea>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Mis Tareas";
 }
 
-<h1>Index</h1>
+<h2>Mis Tareas Asignadas</h2>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.FechaAsignacion)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.FechaEjecucion)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Estado)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdDocumentoNavigation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IdTecnicoAsignadoNavigation)
-            </th>
-            <th></th>
+            <th>Documento</th>
+            <th>Estado</th>
+            <th>Acciones</th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.FechaAsignacion)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.FechaEjecucion)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Estado)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdDocumentoNavigation.IdDocumento)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IdTecnicoAsignadoNavigation.IdUsuario)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.IdTarea">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.IdTarea">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.IdTarea">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var tarea in Model)
+        {
+            <tr>
+                <td>@tarea.IdDocumentoNavigation?.NumeroDocumento</td>
+                <td>
+                    <span class="badge bg-secondary">@tarea.Estado</span>
+                </td>
+                <td>
+                    <a asp-action="Detalle" asp-route-id="@tarea.IdDocumento" class="btn btn-info btn-sm">Ver Detalle</a>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>

@@ -50,11 +50,11 @@ namespace Organizacional.Controllers
             // Guardar datos en sesión
             HttpContext.Session.SetString("NombreUsuario", usuario.Nombre ?? "");
             HttpContext.Session.SetInt32("IdUsuario", usuario.IdUsuario);
-            HttpContext.Session.SetInt32("Rol", usuario.IdRol ?? 0);
+            HttpContext.Session.SetInt32("Rol", usuario.IdRol?? 0);
 
             // Redirigir por rol
             if (usuario.IdRol == 1) return RedirectToAction("Index", "Dashboard"); // Admin
-            if (usuario.IdRol == 2) return RedirectToAction("Index", "Tareas");    // Técnico
+            if (usuario.IdRol == 2) return RedirectToAction("Index", "Dashboard");    // Técnico
 
             return RedirectToAction("Index", "Home");
         }
@@ -139,6 +139,7 @@ namespace Organizacional.Controllers
             usuario.Contrasena = model.NuevaContrasena;
             usuario.DebeCambiarContrasena = false;
             await _context.SaveChangesAsync();
+
 
             TempData["Mensaje"] = "✅ Contraseña actualizada correctamente.";
             return RedirectToAction("Login");

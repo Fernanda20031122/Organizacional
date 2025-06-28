@@ -22,6 +22,39 @@ namespace Organizacional.Controllers
 
         // Solo visible para administrador
         [HttpGet]
+        public IActionResult CrearAdministrador()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CrearAdministrador(Usuario modelo)
+        {
+            if (ModelState.IsValid)
+            {
+                if (await _context.Usuarios.AnyAsync(u => u.Correo == modelo.Correo))
+                {
+                    ModelState.AddModelError("Correo", "Ya existe un usuario con este correo.");
+                    return View(modelo);
+                }
+
+                modelo.Contrasena = modelo.Contrasena; // O encriptada si se aplica
+                modelo.DebeCambiarContrasena = true;
+                modelo.Estado = "activo";
+                modelo.FechaCreacion = DateTime.Now;
+                modelo.IdRol = 1; // 1 = Administrador
+
+                _context.Usuarios.Add(modelo);
+                await _context.SaveChangesAsync();
+
+                TempData["Mensaje"] = "Administrador creado correctamente.";
+                return RedirectToAction("Index");
+            }
+
+            return View(modelo);
+        }
+        [HttpGet]
         public IActionResult CrearTecnico()
         {
             return View();
@@ -61,6 +94,18 @@ namespace Organizacional.Controllers
         {
             var usuarios = await _context.Usuarios.Include(u => u.IdRolNavigation).ToListAsync();
             return View(usuarios);
+        }
+        [HttpPost]
+        public async Task<IActionResult> CambiarEstado(int idUsuario)
+        {
+            var usuario = await _context.Usuarios.FindAsync(idUsuario);
+            if (usuario == null) return NotFound();
+
+            usuario.Estado = usuario.Estado == "activo" ? "inactivo" : "activo";
+            await _context.SaveChangesAsync();
+
+            TempData["Mensaje"] = "Estado del usuario actualizado correctamente.";
+            return RedirectToAction("Index");
         }
     }
 }

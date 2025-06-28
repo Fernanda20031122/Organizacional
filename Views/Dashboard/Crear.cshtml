@@ -7,12 +7,14 @@
 <h2>@ViewData["Title"]</h2>
 
 <form asp-action="Crear" enctype="multipart/form-data" method="post">
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
     <div class="form-group">
         <label asp-for="TipoDocumento" class="control-label"></label>
         <select asp-for="TipoDocumento" class="form-control" id="TipoDocumento">
             <option value="">-- Seleccionar tipo --</option>
             <option value="Orden">Orden</option>
             <option value="Contrato">Contrato</option>
+            <option value="Otro">Otro</option>
         </select>
     </div>
 
@@ -73,14 +75,14 @@
         </div>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" id="grupoArchivoPrincipal">
         <label for="archivoPdf">Documento PDF</label>
-        <input type="file" name="archivoPdf" class="form-control" accept=".pdf" required />
+        <input type="file" name="archivoPdf" class="form-control" accept=".pdf" />
     </div>
 
-    <div class="form-group">
-        <label for="archivoCotizacionPdf">Cotización PDF</label>
-        <input type="file" name="archivoCotizacionPdf" class="form-control" accept=".pdf" required />
+    <div class="form-group" id="grupoCotizacion">
+        <label for="archivoCotizacionPdf">Cotización PDF (Opcional)</label>
+        <input type="file" name="archivoCotizacionPdf" class="form-control" accept=".pdf" />
     </div>
 
     <button type="submit" class="btn btn-primary">Subir</button>
@@ -89,17 +91,41 @@
 
 @section Scripts {
     <script>
-        function toggleFechas() {
+        function manejarTipoDocumento() {
             const tipo = document.getElementById("TipoDocumento").value;
-            document.querySelector(".fecha-generacion").style.display = tipo === "Contrato" ? "none" : "block";
-            document.querySelector(".fecha-inicio").style.display = tipo === "Contrato" ? "block" : "none";
-            document.querySelector(".fecha-fin").style.display = tipo === "Contrato" ? "block" : "none";
-        }
 
-        function toggleTecnico() {
-            const inst = document.getElementById("Instalacion").checked;
-            const mant = document.getElementById("Mantenimiento").checked;
-            // Aquí puedes mostrar algo si quieres (por ahora no hay técnicoAsignado div activo)
+            const grupoArchivo = document.getElementById("grupoArchivoPrincipal");
+            const grupoCotizacion = document.getElementById("grupoCotizacion");
+            const fechaInicio = document.querySelector(".fecha-inicio");
+            const fechaFin = document.querySelector(".fecha-fin");
+            const fechaGeneracion = document.querySelector(".fecha-generacion");
+
+            if (tipo === "Contrato") {
+                grupoArchivo.style.display = "block";
+                grupoCotizacion.style.display = "block";
+                fechaInicio.style.display = "block";
+                fechaFin.style.display = "block";
+                fechaGeneracion.style.display = "none";
+            } else if (tipo === "Orden") {
+                grupoArchivo.style.display = "block";
+                grupoCotizacion.style.display = "block";
+                fechaInicio.style.display = "none";
+                fechaFin.style.display = "none";
+                fechaGeneracion.style.display = "block";
+            } else if (tipo === "Otro") {
+                grupoArchivo.style.display = "none";
+                grupoCotizacion.style.display = "block";
+                fechaInicio.style.display = "none";
+                fechaFin.style.display = "none";
+                fechaGeneracion.style.display = "block";
+            } else {
+                // Default - ocultar todo
+                grupoArchivo.style.display = "none";
+                grupoCotizacion.style.display = "none";
+                fechaInicio.style.display = "none";
+                fechaFin.style.display = "none";
+                fechaGeneracion.style.display = "none";
+            }
         }
 
         function toggleMantenimientoCampos() {
@@ -107,17 +133,11 @@
             document.getElementById("mantenimientoCampos").style.display = mant ? "block" : "none";
         }
 
-        document.getElementById("TipoDocumento").addEventListener("change", toggleFechas);
-        document.getElementById("Instalacion").addEventListener("change", toggleTecnico);
-        document.getElementById("Mantenimiento").addEventListener("change", () => {
-            toggleTecnico();
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("TipoDocumento").addEventListener("change", manejarTipoDocumento);
+            document.getElementById("Mantenimiento").addEventListener("change", toggleMantenimientoCampos);
+            manejarTipoDocumento(); // inicializar en carga
             toggleMantenimientoCampos();
         });
-
-        window.onload = () => {
-            toggleFechas();
-            toggleTecnico();
-            toggleMantenimientoCampos();
-        };
     </script>
 }

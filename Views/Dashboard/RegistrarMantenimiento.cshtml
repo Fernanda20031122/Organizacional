@@ -1,0 +1,47 @@
+﻿@model Organizacional.Models.Mantenimiento
+
+@{
+    ViewData["Title"] = "Registrar Mantenimiento";
+    var fechasRealizadas = string.IsNullOrEmpty(Model.FechasRealizadasJson)
+        ? new List<string>()
+        : System.Text.Json.JsonSerializer.Deserialize<List<string>>(Model.FechasRealizadasJson);
+}
+
+<h2>Registrar Mantenimiento</h2>
+
+<div class="card p-4">
+    <h4>Documento: @Model.IdDocumentoNavigation?.NumeroDocumento</h4>
+    <p><strong>Total de mantenimientos:</strong> @Model.TotalMantenimientos</p>
+    <p><strong>Realizados:</strong> @Model.MantenimientoRealizado</p>
+    <p><strong>Faltantes:</strong> @(Model.TotalMantenimientos - Model.MantenimientoRealizado)</p>
+
+    <h5>Fechas realizadas:</h5>
+    @if (fechasRealizadas != null && fechasRealizadas.Any())
+    {
+        <ul>
+            @foreach (var fecha in fechasRealizadas)
+            {
+                <li>@fecha</li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>No se ha registrado ningún mantenimiento aún.</p>
+    }
+
+    @if (Model.MantenimientoRealizado < Model.TotalMantenimientos)
+    {
+        <form asp-action="RegistrarMantenimientoPost" asp-route-id="@Model.Id" method="post">
+            <button type="submit" class="btn btn-primary mt-3">Registrar mantenimiento de hoy (@DateTime.Now.ToString("yyyy-MM-dd"))</button>
+        </form>
+    }
+    else
+    {
+        <div class="alert alert-success mt-3">
+            Todos los mantenimientos han sido completados.
+        </div>
+    }
+
+    <a asp-action="Detalle" asp-route-id="@Model.IdDocumento" class="btn btn-secondary mt-3">Volver al detalle</a>
+</div>

@@ -1,48 +1,64 @@
-﻿@model Organizacional.Models.Tarea
+﻿@model Organizacional.Models.Documento
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Detalle del Pendiente";
 }
 
-<h1>Details</h1>
+<h3>Detalle del Documento</h3>
 
-<div>
-    <h4>Tarea</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.FechaAsignacion)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.FechaAsignacion)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.FechaEjecucion)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.FechaEjecucion)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Estado)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Estado)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IdDocumentoNavigation)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IdDocumentoNavigation.IdDocumento)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IdTecnicoAsignadoNavigation)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IdTecnicoAsignadoNavigation.IdUsuario)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.IdTarea">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+<table class="table">
+    <tr>
+        <th>Tipo</th>
+        <td>@Model.TipoDocumento</td>
+    </tr>
+    <tr>
+        <th>Número</th>
+        <td>@Model.NumeroDocumento</td>
+    </tr>
+    <tr>
+        <th>Descripción</th>
+        <td>@Model.Descripcion</td>
+    </tr>
+    <tr>
+        <th>Subido por</th>
+        <td>@Model.IdUsuarioSubioNavigation?.Nombre</td>
+    </tr>
+    <tr>
+        <th>Fecha subida</th>
+        <td>@Model.FechaSubida?.ToString("dd/MM/yyyy")</td>
+    </tr>
+    <tr>
+        <th>Estado</th>
+        <td>
+            @Model.Tareas.FirstOrDefault()?.Estado ?? "Pendiente"
+        </td>
+    </tr>
+</table>
+
+@if (Model.Tareas.FirstOrDefault()?.Estado != "completado")
+{
+    <form asp-action="CambiarEstadoTarea" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="idTarea" value="@Model.Tareas.FirstOrDefault()?.IdTarea" />
+        <div class="mb-3">
+            <label for="nuevoEstado" class="form-label">Cambiar Estado</label>
+            <select name="nuevoEstado" class="form-select">
+                <option value="en_proceso">En Proceso</option>
+                <option value="completado">Completado</option>
+                <option value="cancelado">Cancelado</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+    </form>
+}
+
+@if (Model.Mantenimientos.Any())
+{
+    <h5 class="mt-4">Mantenimientos</h5>
+    <p>Total: @Model.Mantenimientos.FirstOrDefault()?.TotalMantenimientos</p>
+    <p>Realizados: @Model.Mantenimientos.FirstOrDefault()?.MantenimientoRealizado</p>
+
+    <a class="btn btn-warning" asp-controller="Dashboard" asp-action="RegistrarMantenimiento" asp-route-id="@Model.Mantenimientos.FirstOrDefault()?.Id">
+        Registrar Mantenimiento
+    </a>
+}
