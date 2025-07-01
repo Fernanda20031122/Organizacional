@@ -118,9 +118,9 @@
                     <tr>
                         <th>#</th>
                         <th>Tipo de Servicio</th>
+                        <th>Empresa</th>
                         <th>Estado</th>
                         <th>Subido por</th>
-                        <th>Fecha subida</th>
                         <th>Días transcurridos</th>
                         <th>Técnico Asignado</th>
                         <th>Progreso</th>
@@ -148,6 +148,7 @@
                                     <i class="bi bi-wrench-adjustable text-warning me-1" data-bs-toggle="tooltip" title="Mantenimiento"></i>
                                 }
                             </td>
+                            <td>@(item.EmpresaDestino)</td>
                             <td>
                                 @switch (item.Estado?.Trim().ToLower())
                                 {
@@ -169,7 +170,6 @@
                                 }
                             </td>
                             <td>@item.SubidoPor</td>
-                            <td>@(item.FechaSubida == DateTime.MinValue ? "No registrada" : item.FechaSubida.ToString("dd/MM/yyyy"))</td>
                             <td>
                                 @(item.Tipo == "Contrato"
                                                             ? $"{item.DiasTranscurridosContrato} días"

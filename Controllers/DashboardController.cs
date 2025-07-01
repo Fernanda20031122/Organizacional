@@ -41,6 +41,7 @@ namespace Organizacional.Controllers
                 FechaInicio = d.FechaInicio?.ToDateTime(TimeOnly.MinValue),
                 FechaFin = d.FechaFin?.ToDateTime(TimeOnly.MinValue),
                 IdDocumento = d.IdDocumento,
+                EmpresaDestino = d.EmpresaDestino ?? "Sin empresa",
                 Tipo = d.TipoDocumento ?? "Sin tipo",
                 NumeroDocumento = d.NumeroDocumento ?? "Sin número",
                 SubidoPor = d.IdUsuarioSubioNavigation?.Nombre ?? "Desconocido",

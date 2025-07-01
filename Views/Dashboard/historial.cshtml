@@ -24,12 +24,11 @@
                     <tr>
                         <th>#</th>
                         <th>Tipo de Servicio</th>
+                        <th>Empresa</th>
                         <th>Estado</th>
                         <th>Subido por</th>
                         <th>Fecha subida</th>
-                        <th>Días transcurridos</th>
                         <th>Técnico Asignado</th>
-                        <th>Progreso</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -54,6 +53,7 @@
                                     <i class="bi bi-wrench-adjustable text-warning me-1" data-bs-toggle="tooltip" title="Mantenimiento"></i>
                                 }
                             </td>
+                            <td>@(item.EmpresaDestino)</td>
                             <td>
                                 @switch (item.Estado?.Trim().ToLower())
                                 {
@@ -77,35 +77,10 @@
                         <td>@item.SubidoPor</td>
                         <td>@(item.FechaSubida == DateTime.MinValue ? "No registrada" : item.FechaSubida.ToString("dd/MM/yyyy"))</td>
                         <td>
-                            @(item.Tipo == "Contrato"
-                                                        ? $"{item.DiasTranscurridosContrato} días"
-                                                        : $"{item.DiasTranscurridos} días")
-                        </td>
-                        <td>
                             @item.TecnicoAsignado
                             @if (item.TecnicoAsignado == Context.Session.GetString("NombreUsuario"))
                                 {
                                     <span class="badge bg-primary ms-1">Asignado a ti</span>
-                                }
-                            </td>
-                            <td>
-                                @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
-                                {
-                                    string barraColor = "bg-success";
-                                    if (item.PorcentajeProgreso >= 100) barraColor = "bg-primary";
-                                    else if (item.PorcentajeProgreso > 80) barraColor = "bg-danger";
-                                    else if (item.PorcentajeProgreso > 50) barraColor = "bg-warning";
-
-                                    <div class="progress" title="Inicio: @(item.FechaInicio?.ToString("dd/MM/yyyy") ?? "N/A") - Fin: @(item.FechaFin?.ToString("dd/MM/yyyy") ?? "N/A")">
-                                        <div class="progress-bar @barraColor" role="progressbar"
-                                             style="width: @item.PorcentajeProgreso%;" aria-valuenow="@item.PorcentajeProgreso"
-                                             aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                    <span class="fw-bold">@item.PorcentajeProgreso% (@item.DiasTranscurridosContrato de @item.DiasTotalesContrato días)</span>
-                                }
-                                else
-                                {
-                                    <span>N/A</span>
                                 }
                             </td>
                             <td>
