@@ -53,6 +53,8 @@ jobs:
           cd /home/ubuntu/Organizacional
           git reset --hard origin/master
           git pull origin master
+          echo "Limpiando carpeta publish anterior..."
+          rm -rf ./publish
           echo "Publicando app..."
           dotnet publish ./Organizacional.csproj --configuration Release --output ./publish
           echo "Publicación completada"
