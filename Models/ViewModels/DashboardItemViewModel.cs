@@ -10,6 +10,8 @@ namespace Organizacional.Models.ViewModels
         public string NumeroDocumento { get; set; } = "";
         public string Estado { get; set; } = "";
         public string SubidoPor { get; set; } = "";
+        public string EmpresaDestino { get; set; }
+
         public DateTime FechaSubida { get; set; }
         public int DiasTranscurridos { get; set; }
         public int DiasTotalesContrato { get; set; }
