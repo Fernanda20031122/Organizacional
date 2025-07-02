@@ -54,8 +54,15 @@ jobs:
           git reset --hard origin/master
           git pull origin master
           echo "Limpiando carpeta publish anterior..."
-          rm -rf ./publish
+          cd /home/ubuntu/Organizacional/publish
+          # Borra todo menos wwwroot
+          find . -mindepth 1 -maxdepth 1 ! -name 'wwwroot' -exec rm -rf {} +
+          # Si existe wwwroot, borra todo menos uploads
+          if [ -d ./wwwroot ]; then
+            find ./wwwroot -mindepth 1 -maxdepth 1 ! -name 'uploads' -exec rm -rf {} +
+          fi
           echo "Publicando app..."
+          cd /home/ubuntu/Organizacional
           dotnet publish ./Organizacional.csproj --configuration Release --output ./publish
           echo "Publicación completada"
           sudo systemctl restart organiza.service
