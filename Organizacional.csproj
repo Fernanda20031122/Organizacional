@@ -9,6 +9,11 @@
 
   <ItemGroup>
     <Compile Remove="Models\OrganizacionalContext.cs" />
+    <Compile Remove="Views\Dashboard\RegistrarMantenimiento.cshtml.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Views\Dashboard\RegistrarMantenimiento.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
