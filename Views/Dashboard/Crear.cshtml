@@ -8,6 +8,7 @@
 
 <form asp-action="Crear" enctype="multipart/form-data" method="post">
     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
     <div class="form-group">
         <label asp-for="TipoDocumento" class="control-label"></label>
         <select asp-for="TipoDocumento" class="form-control" id="TipoDocumento">
@@ -119,7 +120,6 @@
                 fechaFin.style.display = "none";
                 fechaGeneracion.style.display = "block";
             } else {
-                // Default - ocultar todo
                 grupoArchivo.style.display = "none";
                 grupoCotizacion.style.display = "none";
                 fechaInicio.style.display = "none";
@@ -136,65 +136,7 @@
         document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("TipoDocumento").addEventListener("change", manejarTipoDocumento);
             document.getElementById("Mantenimiento").addEventListener("change", toggleMantenimientoCampos);
-            manejarTipoDocumento(); // inicializar en carga
-            toggleMantenimientoCampos();
-        });
-    </script>
-}
-
-
-    <button type="submit" class="btn btn-primary">Subir</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-</form>
-
-@section Scripts {
-    <script>
-        function manejarTipoDocumento() {
-            const tipo = document.getElementById("TipoDocumento").value;
-
-            const grupoArchivo = document.getElementById("grupoArchivoPrincipal");
-            const grupoCotizacion = document.getElementById("grupoCotizacion");
-            const fechaInicio = document.querySelector(".fecha-inicio");
-            const fechaFin = document.querySelector(".fecha-fin");
-            const fechaGeneracion = document.querySelector(".fecha-generacion");
-
-            if (tipo === "Contrato") {
-                grupoArchivo.style.display = "block";
-                grupoCotizacion.style.display = "block";
-                fechaInicio.style.display = "block";
-                fechaFin.style.display = "block";
-                fechaGeneracion.style.display = "none";
-            } else if (tipo === "Orden") {
-                grupoArchivo.style.display = "block";
-                grupoCotizacion.style.display = "block";
-                fechaInicio.style.display = "none";
-                fechaFin.style.display = "none";
-                fechaGeneracion.style.display = "block";
-            } else if (tipo === "Otro") {
-                grupoArchivo.style.display = "none";
-                grupoCotizacion.style.display = "block";
-                fechaInicio.style.display = "none";
-                fechaFin.style.display = "none";
-                fechaGeneracion.style.display = "block";
-            } else {
-                // Default - ocultar todo
-                grupoArchivo.style.display = "none";
-                grupoCotizacion.style.display = "none";
-                fechaInicio.style.display = "none";
-                fechaFin.style.display = "none";
-                fechaGeneracion.style.display = "none";
-            }
-        }
-
-        function toggleMantenimientoCampos() {
-            const mant = document.getElementById("Mantenimiento").checked;
-            document.getElementById("mantenimientoCampos").style.display = mant ? "block" : "none";
-        }
-
-        document.addEventListener("DOMContentLoaded", function () {
-            document.getElementById("TipoDocumento").addEventListener("change", manejarTipoDocumento);
-            document.getElementById("Mantenimiento").addEventListener("change", toggleMantenimientoCampos);
-            manejarTipoDocumento(); // inicializar en carga
+            manejarTipoDocumento();
             toggleMantenimientoCampos();
         });
     </script>
