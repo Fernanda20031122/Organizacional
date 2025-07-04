@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Organizacional.Data;
@@ -33,6 +33,7 @@ namespace Organizacional.Controllers
                 .Include(d => d.IdUsuarioSubioNavigation)
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
+                .Where(d => !d.Tareas.Any() || d.Tareas.All(t => t.Estado != "Completado" && t.Estado != "Cancelado"))
                 .ToListAsync();
 
             var modelo = documentos.Select(d => new DashboardItemViewModel
@@ -250,7 +251,6 @@ namespace Organizacional.Controllers
             {
                 documento.FechaGeneracion = modelo.FechaGeneracion;
             }
-
 
             // Subir archivo principal (excepto si es "Otro")
             if (modelo.TipoDocumento != "Otro" && archivoPdf != null && archivoPdf.Length > 0)
