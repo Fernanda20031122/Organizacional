@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Organizacional.Data;
@@ -475,9 +475,10 @@ namespace Organizacional.Controllers
         public async Task<IActionResult> Historial()
         {
             var pendientes = await _context.Documentos
-                .Include(d => d.Tareas)
                 .Include(d => d.IdUsuarioSubioNavigation)
-                .Where(d => d.Tareas.Any(t => t.Estado == "completado" || t.Estado == "cancelado"))
+                .Include(d => d.Tareas)
+                    .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
+                .Where(d => !d.Tareas.Any() || d.Tareas.All(t => t.Estado != "Completado" && t.Estado != "Cancelado"))
                 .ToListAsync();
 
             var modelo = pendientes.Select(d => new DashboardItemViewModel
@@ -492,10 +493,12 @@ namespace Organizacional.Controllers
                 FechaSubida = d.FechaSubida?.ToDateTime(TimeOnly.MinValue) ?? DateTime.MinValue,
                 Suministro = d.Suministro ?? false,
                 Instalacion = d.Instalacion ?? false,
-                Mantenimiento = d.Mantenimiento ?? false
+                Mantenimiento = d.Mantenimiento ?? false,
+                TecnicoAsignado = d.Tareas.FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado",
+                EmpresaDestino = d.EmpresaDestino ?? "Sin empresa"
             }).ToList();
-
             return View(modelo);
         }
     }
 }
+

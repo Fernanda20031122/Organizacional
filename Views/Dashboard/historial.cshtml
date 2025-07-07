@@ -73,18 +73,18 @@
                                         <span class="badge bg-secondary">Desconocido</span>
                                         ; break;
                                 }
-                        </td>
-                        <td>@item.SubidoPor</td>
-                        <td>@(item.FechaSubida == DateTime.MinValue ? "No registrada" : item.FechaSubida.ToString("dd/MM/yyyy"))</td>
-                        <td>
-                            @item.TecnicoAsignado
-                            @if (item.TecnicoAsignado == Context.Session.GetString("NombreUsuario"))
-                                {
-                                    <span class="badge bg-primary ms-1">Asignado a ti</span>
-                                }
+                            </td>
+                            <td>@item.SubidoPor</td>
+                            <td>@(item.FechaSubida == DateTime.MinValue ? "No registrada" : item.FechaSubida.ToString("dd/MM/yyyy"))</td>
+                            <td>
+                                @item.TecnicoAsignado
+                                @if (item.TecnicoAsignado == Context.Session.GetString("NombreUsuario"))
+                                    {
+                                        <span class="badge bg-primary ms-1">Asignado a ti</span>
+                                    }
                             </td>
                             <td>
-                                <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-info btn-sm">Ver Detalle</a>
+                                    <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-info btn-sm">Ver Detalle</a>
                             </td>
                         </tr>
                     }
@@ -98,64 +98,5 @@
         const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
         tooltips.forEach(t => new bootstrap.Tooltip(t));
     </script>
-    <script>
-        document.getElementById('campanaNotificaciones')?.addEventListener('click', () => {
-            fetch('/Dashboard/MarcarNotificacionesLeidas', {
-                method: 'POST',
-                headers: {
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-                }
-            })
-            .then(() => {
-                const badge = document.getElementById('notificacionBadge');
-                if (badge) {
-                    badge.textContent = '0';
-                    badge.classList.add('d-none');
-                }
-            });
-        });
-    </script>
-    <script>
-        function marcarNotificacionesComoLeidas() {
-            fetch('/Dashboard/MarcarNotificacionesComoLeidas', {
-                method: 'POST',
-                headers: {
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                }
-            }).then(response => {
-                if (response.ok) {
-                    console.log("Notificaciones marcadas como leídas");
-                }
-            });
-        }
-
-        // Cuando se haga clic en la campana
-        document.getElementById('campanaNotificaciones')?.addEventListener('click', marcarNotificacionesComoLeidas);
-    </script>
-    <script>
-        async function marcarNotificacionesComoLeidas() {
-            try {
-                const respuesta = await fetch('/Dashboard/MarcarNotificacionesComoLeidas', {
-                    method: 'POST',
-                    headers: {
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-                    }
-                });
-
-                if (respuesta.ok) {
-                    // Ocultar el badge de número rojo
-                    const badge = document.getElementById('badgeNoti');
-                    if (badge) {
-                        badge.style.display = 'none';
-                    }
-                }
-            } catch (error) {
-                console.error("Error al marcar notificaciones como leídas:", error);
-            }
-        }
-
-        document.getElementById('campanaNotificaciones')?.addEventListener('click', marcarNotificacionesComoLeidas);
-    </script>
-
 </body>
 </html>
