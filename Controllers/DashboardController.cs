@@ -478,7 +478,7 @@ namespace Organizacional.Controllers
                 .Include(d => d.IdUsuarioSubioNavigation)
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
-                .Where(d => !d.Tareas.Any() || d.Tareas.All(t => t.Estado != "Completado" && t.Estado != "Cancelado"))
+                .Where(d => d.Tareas.Any(t => t.Estado == "Completado" || t.Estado == "Cancelado"))
                 .ToListAsync();
 
             var modelo = pendientes.Select(d => new DashboardItemViewModel
