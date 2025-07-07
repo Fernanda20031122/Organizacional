@@ -21,8 +21,9 @@
     </div>
 
     <div class="mb-3">
-        <label for="ContrasenaTemporal" class="form-label">Contraseña Provisional</label>
-        <input type="password" name="ContrasenaTemporal" class="form-control" required />
+        <label asp-for="Contrasena" class="form-label">Contraseña Provisional</label>
+        <input asp-for="Contrasena" type="password" class="form-control" required />
+        <span asp-validation-for="Contrasena" class="text-danger"></span>
     </div>
 
     <button type="submit" class="btn btn-primary">Crear Técnico</button>

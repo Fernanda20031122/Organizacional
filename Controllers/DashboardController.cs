@@ -20,6 +20,13 @@ namespace Organizacional.Controllers
         public async Task<IActionResult> Index()
         {
             var idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+            var rol = HttpContext.Session.GetInt32("Rol");
+            if (idUsuario == null || rol == null)
+            {
+                // Si la sesión expiró o no existe, redirige al login
+                return RedirectToAction("Login", "Auth");
+            }
+            
             ViewBag.Notificaciones = await _context.Notificaciones
                 .Where(n => n.IdUsuario == idUsuario)
                 .OrderByDescending(n => n.Fecha)
@@ -218,7 +225,6 @@ namespace Organizacional.Controllers
                 ModelState.AddModelError("", "Debes subir el documento principal en PDF.");
             }
 
-            // Si hay errores, mostrar vista con errores
             if (!ModelState.IsValid)
             {
                 var errores = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
@@ -226,7 +232,9 @@ namespace Organizacional.Controllers
                 return View(modelo);
             }
 
-            // Aquí ya no hay errores, entonces puedes crear el documento
+            // ✔️ Obtener el ID del usuario logueado de la sesión
+            var idUsuarioSubio = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+
             var documento = new Documento
             {
                 TipoDocumento = modelo.TipoDocumento,
@@ -238,7 +246,7 @@ namespace Organizacional.Controllers
                 Mantenimiento = modelo.Mantenimiento,
                 FechaSubida = DateOnly.FromDateTime(DateTime.Today),
                 Asignada = false,
-                IdUsuarioSubio = 1 // <- Ajústalo con sesión real
+                IdUsuarioSubio = idUsuarioSubio // 👈 Aquí se guarda el usuario real
             };
 
             // Asignar fechas
@@ -252,7 +260,7 @@ namespace Organizacional.Controllers
                 documento.FechaGeneracion = modelo.FechaGeneracion;
             }
 
-            // Subir archivo principal (excepto si es "Otro")
+            // Subir archivo principal
             if (modelo.TipoDocumento != "Otro" && archivoPdf != null && archivoPdf.Length > 0)
             {
                 var nombreArchivo = Guid.NewGuid() + Path.GetExtension(archivoPdf.FileName);
@@ -293,6 +301,7 @@ namespace Organizacional.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
 
         public async Task<IActionResult> Detalle(int id)
         {

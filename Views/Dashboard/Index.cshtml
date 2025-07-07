@@ -3,6 +3,17 @@
     ViewData["Title"] = "Dashboard Pendientes";
     Layout = null;
 }
+@{
+    var idUsuario = Context.Session.GetInt32("IdUsuario");
+    var rolUsuario = Context.Session.GetInt32("Rol");
+}
+
+@if (idUsuario == null || rolUsuario == null)
+{
+    <script>
+        window.location.href = '/Auth/Login';
+    </script>
+}
 
 <!DOCTYPE html>
 <html lang="es">

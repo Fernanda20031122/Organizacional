@@ -41,7 +41,7 @@ namespace Organizacional.Controllers
 
                 modelo.Contrasena = modelo.Contrasena; // O encriptada si se aplica
                 modelo.DebeCambiarContrasena = true;
-                modelo.Estado = "activo";
+                modelo.Estado = "activo";   
                 modelo.FechaCreacion = DateTime.Now;
                 modelo.IdRol = 1; // 1 = Administrador
 
@@ -66,24 +66,23 @@ namespace Organizacional.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Verifica que no exista ese correo ya registrado
                 if (await _context.Usuarios.AnyAsync(u => u.Correo == modelo.Correo))
                 {
                     ModelState.AddModelError("Correo", "Ya existe un usuario con este correo.");
                     return View(modelo);
                 }
 
-                modelo.Contrasena = modelo.Contrasena; // se puede encriptar si usas hash
+                modelo.Contrasena = modelo.Contrasena; // O encriptada si se aplica
                 modelo.DebeCambiarContrasena = true;
-                modelo.Estado = "activo";
+                modelo.Estado = "activo";   
                 modelo.FechaCreacion = DateTime.Now;
-                modelo.IdRol = 2; // Técnico
+                modelo.IdRol = 2; // 2 = Tecnico
 
                 _context.Usuarios.Add(modelo);
                 await _context.SaveChangesAsync();
 
-                TempData["Mensaje"] = "Técnico creado con éxito. El usuario debe cambiar su contraseña al ingresar.";
-                return RedirectToAction("Index", "Usuarios");
+                TempData["Mensaje"] = "Tecnico creado correctamente.";
+                return RedirectToAction("Index");
             }
 
             return View(modelo);
