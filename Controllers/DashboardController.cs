@@ -80,6 +80,8 @@ namespace Organizacional.Controllers
                 TecnicoAsignado = (d.Suministro.GetValueOrDefault() || d.Instalacion.GetValueOrDefault() || d.Mantenimiento.GetValueOrDefault())
                     ? d.Tareas.FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado"
                     : "N/A",
+                    
+                ColaboradorAsignado = d.Tareas.FirstOrDefault(t => t.IdColaboradorAsignadoNavigation != null)?.IdColaboradorAsignadoNavigation?.Nombre ?? "No asignado",
 
                 // Estos los usas para mostrar viñetas o íconos en la vista
                 Suministro = d.Suministro ?? false,

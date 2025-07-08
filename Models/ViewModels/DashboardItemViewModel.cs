@@ -17,6 +17,7 @@ namespace Organizacional.Models.ViewModels
         public int DiasTranscurridosContrato { get; set; }
         public int PorcentajeProgreso { get; set; }
         public string TecnicoAsignado { get; set; } = "";
+        public string ColaboradorAsignado { get; set; } = "";
         public DateTime? FechaInicio { get; set; }
         public DateTime? FechaFin { get; set; }
         public string Servicios { get; set; } = "";

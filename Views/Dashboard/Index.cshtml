@@ -144,7 +144,7 @@
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        <tr class="@(item.TecnicoAsignado == Context.Session.GetString("NombreUsuario") ? "table-warning fw-bold" : "")">
+                        <tr class="@(item.TecnicoAsignado == Context.Session.GetString("NombreUsuario")|| item.ColaboradorAsignado == Context.Session.GetString("NombreUsuario") ? "table-warning fw-bold" : "")">
                             <td>
                                 @item.NumeroDocumento
                             </td>
