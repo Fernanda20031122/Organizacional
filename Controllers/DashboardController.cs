@@ -191,8 +191,19 @@ namespace Organizacional.Controllers
         }
 
         [HttpGet]
-        public IActionResult Crear()
+        public async Task<IActionResult> Crear()
         {
+            var tecnicos = await _context.Usuarios
+                .Where(u => u.IdRol == 2 && u.Estado == "activo")
+                .ToListAsync();
+
+            var colaboradores = await _context.Usuarios
+                .Where(u => u.IdRol == 1 && u.Estado == "activo")
+                .ToListAsync();
+
+            ViewBag.Tecnicos = new SelectList(tecnicos, "IdUsuario", "Nombre");
+            ViewBag.Colaboradores = new SelectList(colaboradores, "IdUsuario", "Nombre");
+
             return View(new DocumentoFormViewModel());
         }
 
@@ -229,6 +240,11 @@ namespace Organizacional.Controllers
             {
                 var errores = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
                 Console.WriteLine("ERRORES: " + string.Join(" | ", errores));
+                // Vuelve a llenar ViewBag si falla validación
+                var tecnicos = await _context.Usuarios.Where(u => u.IdRol == 2 && u.Estado == "activo").ToListAsync();
+                var colaboradores = await _context.Usuarios.Where(u => u.IdRol == 1 && u.Estado == "activo").ToListAsync();
+                ViewBag.Tecnicos = new SelectList(tecnicos, "IdUsuario", "Nombre");
+                ViewBag.Colaboradores = new SelectList(colaboradores, "IdUsuario", "Nombre");
                 return View(modelo);
             }
 
@@ -284,6 +300,23 @@ namespace Organizacional.Controllers
             _context.Documentos.Add(documento);
             await _context.SaveChangesAsync();
 
+            // Crear tarea solo si hay técnico o colaborador asignado de una vez
+            if (modelo.IdTecnicoAsignado.HasValue || modelo.IdColaboradorAsignado.HasValue)
+            {
+                var tarea = new Tarea
+                {
+                    IdDocumento = documento.IdDocumento,
+                    IdTecnicoAsignado = modelo.IdTecnicoAsignado,
+                    IdColaboradorAsignado = modelo.IdColaboradorAsignado,
+                    FechaAsignacion = DateOnly.FromDateTime(DateTime.Today),
+                    Estado = "Pendiente",
+                    Completada = false
+                };
+
+                _context.Tareas.Add(tarea);
+                await _context.SaveChangesAsync();
+            }
+
             // Guardar mantenimiento si corresponde
             if (modelo.Mantenimiento && modelo.CantidadMantenimientos > 0)
             {
@@ -307,7 +340,10 @@ namespace Organizacional.Controllers
         {
             var documento = await _context.Documentos
                 .Include(d => d.IdUsuarioSubioNavigation)
-                .Include(d => d.Tareas).ThenInclude(t => t.IdTecnicoAsignadoNavigation)
+                .Include(d => d.Tareas)
+                    .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
+                .Include(d => d.Tareas)
+                    .ThenInclude(t => t.IdColaboradorAsignadoNavigation)
                 .Include(d => d.Mantenimientos)
                 .FirstOrDefaultAsync(d => d.IdDocumento == id);
 
@@ -402,6 +438,48 @@ namespace Organizacional.Controllers
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Detalle), new { id = idDocumento });
+        }
+        [HttpGet]
+        public async Task<IActionResult> AsignarColaborador(int id)
+        {
+            var documento = await _context.Documentos.FindAsync(id);
+            if (documento == null)
+                return NotFound();
+
+            var colaboradores = await _context.Usuarios
+                .Where(u => u.IdRol == 1)
+                .Select(u => new SelectListItem
+                {
+                    Value = u.IdUsuario.ToString(),
+                    Text = u.Nombre
+                }).ToListAsync();
+
+            ViewBag.IdDocumento = id;
+            ViewBag.Colaboradores = colaboradores;
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AsignarColaborador(int idDocumento, int idColaborador)
+        {
+            var documento = await _context.Documentos
+                .Include(d => d.Tareas)
+                .FirstOrDefaultAsync(d => d.IdDocumento == idDocumento);
+
+            if (documento == null) return NotFound();
+
+            var tarea = documento.Tareas.FirstOrDefault() ?? new Tarea { IdDocumento = idDocumento };
+
+            tarea.IdColaboradorAsignado = idColaborador;
+            tarea.FechaAsignacion = DateOnly.FromDateTime(DateTime.Today);
+
+            if (tarea.IdTarea == 0)
+                _context.Tareas.Add(tarea);
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Detalle", new { id = idDocumento });
         }
 
         [HttpGet]

@@ -33,7 +33,15 @@ namespace Organizacional.Models.ViewModels
         public string? PeriodicidadMantenimientos { get; set; } // ejemplo: "30" días
 
         // Técnico asignado (opcional)
-       // public int? IdTecnicoAsignado { get; set; }
+       public int? IdTecnicoAsignado { get; set; }
+       public int? IdColaboradorAsignado { get; set; }
+
+        // Lista de técnicos disponibles (opcional)
+        // Esta lista se puede llenar desde el controlador
+        // public List<SelectListItem>? TecnicosDisponibles { get; set; }
+        
+        // Lista de colaboradores disponibles (opcional)
+        // Esta lista se puede llenar desde el controlador
 
        // public List<SelectListItem>? TecnicosDisponibles { get; set; }
 

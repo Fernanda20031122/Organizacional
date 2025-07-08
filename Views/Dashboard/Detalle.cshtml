@@ -4,6 +4,7 @@
     ViewData["Title"] = "Detalle del Pendiente";
     Layout = "_Layout";
     var tecnico = Model.Tareas.FirstOrDefault()?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado";
+    var colaborador = Model.Tareas.FirstOrDefault()?.IdColaboradorAsignadoNavigation?.Nombre ?? "No asignado";
     var tieneMantenimientos = Model.Mantenimientos != null && Model.Mantenimientos.Any();
 }
 
@@ -51,13 +52,26 @@
     </p>
 
     <p><strong>Técnico asignado:</strong> @tecnico</p>
+    <p><strong>Colaborador asignado:</strong> @colaborador</p>
 
-    @if (tecnico == "No asignado" && (Model.Instalacion == true || Model.Mantenimiento == true))
-    {
-        <a asp-action="AsignarTecnico" asp-route-id="@Model.IdDocumento" class="btn btn-warning mt-2">
-            Asignar Técnico
-        </a>
-    }
+    <div class="card border-secondary mt-4">
+        <div class="card-header bg-secondary text-white">Acciones Disponibles</div>
+        <div class="card-body d-flex gap-3">
+            @if (tecnico == "No asignado" && (Model.Instalacion == true || Model.Mantenimiento == true))
+            {
+                <a asp-action="AsignarTecnico" asp-route-id="@Model.IdDocumento" class="btn btn-warning">
+                    <i class="bi bi-person-gear"></i> Asignar Técnico
+                </a>
+            }
+            @if (colaborador == "No asignado")
+            {
+                <a asp-action="AsignarColaborador" asp-route-id="@Model.IdDocumento" class="btn btn-primary">
+                    <i class="bi bi-person-plus"></i> Asignar Colaborador
+                </a>
+            }
+        </div>
+    </div>
+    
 </div>
 @if (Model.Tareas != null && Model.Tareas.Any())
 {

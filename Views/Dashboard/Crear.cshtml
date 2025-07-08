@@ -49,6 +49,20 @@
         <input asp-for="EmpresaDestino" class="form-control" />
     </div>
 
+    <div class="mb-3">
+        <label>Técnico (opcional)</label>
+        <select asp-for="IdTecnicoAsignado" asp-items="ViewBag.Tecnicos" class="form-control">
+            <option value="">-- Seleccionar Técnico --</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Colaborador (opcional)</label>
+        <select asp-for="IdColaboradorAsignado" asp-items="ViewBag.Colaboradores" class="form-control">
+            <option value="">-- Seleccionar Colaborador --</option>
+        </select>
+    </div>
+
     <div class="form-group form-check">
         <input asp-for="Suministro" class="form-check-input" id="Suministro" />
         <label asp-for="Suministro" class="form-check-label">Suministro</label>
