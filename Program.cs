@@ -3,6 +3,11 @@ using Organizacional.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 104857600; // 100 MB en bytes
+});
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddSession();
