@@ -211,7 +211,7 @@ namespace Organizacional.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Crear(DocumentoFormViewModel modelo, IFormFile archivoPdf, IFormFile archivoCotizacionPdf)
+        public async Task<IActionResult> Crear(DocumentoFormViewModel modelo)
         {
             // Validar tipo de documento
             if (string.IsNullOrEmpty(modelo.TipoDocumento) ||
@@ -220,29 +220,27 @@ namespace Organizacional.Controllers
                 ModelState.AddModelError("TipoDocumento", "Tipo de documento inválido.");
             }
 
-            // Validar fechas según tipo
+            // Validar fechas según el tipo de documento
             if (modelo.TipoDocumento == "Contrato")
             {
                 if (modelo.FechaInicio == null || modelo.FechaFin == null)
+                {
                     ModelState.AddModelError("", "Debes ingresar fecha de inicio y fin para un contrato.");
+                }
             }
-            else if (modelo.TipoDocumento == "Orden" || modelo.TipoDocumento == "Otro")
+            else
             {
                 if (modelo.FechaGeneracion == null)
+                {
                     ModelState.AddModelError("FechaGeneracion", "La fecha de generación es obligatoria.");
+                }
             }
 
-            // Validar archivo principal solo si NO es "Otro"
-            if (modelo.TipoDocumento != "Otro" && (archivoPdf == null || archivoPdf.Length == 0))
-            {
-                ModelState.AddModelError("", "Debes subir el documento principal en PDF.");
-            }
+            // NO validamos archivos como obligatorios
 
+            // Si hay errores, recargar ViewBag y volver a la vista
             if (!ModelState.IsValid)
             {
-                var errores = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-                Console.WriteLine("ERRORES: " + string.Join(" | ", errores));
-                // Vuelve a llenar ViewBag si falla validación
                 var tecnicos = await _context.Usuarios.Where(u => u.IdRol == 2 && u.Estado == "activo").ToListAsync();
                 var colaboradores = await _context.Usuarios.Where(u => u.IdRol == 1 && u.Estado == "activo").ToListAsync();
                 ViewBag.Tecnicos = new SelectList(tecnicos, "IdUsuario", "Nombre");
@@ -250,7 +248,6 @@ namespace Organizacional.Controllers
                 return View(modelo);
             }
 
-            // ✔️ Obtener el ID del usuario logueado de la sesión
             var idUsuarioSubio = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
 
             var documento = new Documento
@@ -264,10 +261,10 @@ namespace Organizacional.Controllers
                 Mantenimiento = modelo.Mantenimiento,
                 FechaSubida = DateOnly.FromDateTime(DateTime.Today),
                 Asignada = false,
-                IdUsuarioSubio = idUsuarioSubio // 👈 Aquí se guarda el usuario real
+                IdUsuarioSubio = idUsuarioSubio
             };
 
-            // Asignar fechas
+            // Asignar fechas según tipo
             if (modelo.TipoDocumento == "Contrato")
             {
                 documento.FechaInicio = modelo.FechaInicio;
@@ -278,31 +275,32 @@ namespace Organizacional.Controllers
                 documento.FechaGeneracion = modelo.FechaGeneracion;
             }
 
-            // Subir archivo principal
-            if (modelo.TipoDocumento != "Otro" && archivoPdf != null && archivoPdf.Length > 0)
+            // Guardar archivo principal si existe
+            if (modelo.ArchivoPdf != null && modelo.ArchivoPdf.Length > 0)
             {
-                var nombreArchivo = Guid.NewGuid() + Path.GetExtension(archivoPdf.FileName);
+                var nombreArchivo = Guid.NewGuid() + Path.GetExtension(modelo.ArchivoPdf.FileName);
                 var ruta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads", nombreArchivo);
                 using var stream = new FileStream(ruta, FileMode.Create);
-                await archivoPdf.CopyToAsync(stream);
+                await modelo.ArchivoPdf.CopyToAsync(stream);
                 documento.ArchivoUrl = "/uploads/" + nombreArchivo;
             }
 
-            // Subir cotización (opcional)
-            if (archivoCotizacionPdf != null && archivoCotizacionPdf.Length > 0)
+            // Guardar archivo cotización si existe
+            if (modelo.ArchivoCotizacionPdf != null && modelo.ArchivoCotizacionPdf.Length > 0)
             {
-                var nombreCot = Guid.NewGuid() + Path.GetExtension(archivoCotizacionPdf.FileName);
+                var nombreCot = Guid.NewGuid() + Path.GetExtension(modelo.ArchivoCotizacionPdf.FileName);
                 var rutaCot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads", nombreCot);
                 using var streamCot = new FileStream(rutaCot, FileMode.Create);
-                await archivoCotizacionPdf.CopyToAsync(streamCot);
+                await modelo.ArchivoCotizacionPdf.CopyToAsync(streamCot);
                 documento.CotizacionArchivoUrl = "/uploads/" + nombreCot;
                 documento.CotizacionFecha = DateTime.Today;
             }
 
+            // Guardar documento
             _context.Documentos.Add(documento);
             await _context.SaveChangesAsync();
 
-            // Crear tarea solo si hay técnico o colaborador asignado de una vez
+            // Crear tarea si hay asignación
             if (modelo.IdTecnicoAsignado.HasValue || modelo.IdColaboradorAsignado.HasValue)
             {
                 var tarea = new Tarea
@@ -314,12 +312,11 @@ namespace Organizacional.Controllers
                     Estado = "Pendiente",
                     Completada = false
                 };
-
                 _context.Tareas.Add(tarea);
                 await _context.SaveChangesAsync();
             }
 
-            // Guardar mantenimiento si corresponde
+            // Guardar info de mantenimiento si aplica
             if (modelo.Mantenimiento && modelo.CantidadMantenimientos > 0)
             {
                 var mantenimiento = new Mantenimiento
@@ -336,7 +333,6 @@ namespace Organizacional.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
 
         public async Task<IActionResult> Detalle(int id)
         {
