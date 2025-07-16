@@ -10,59 +10,29 @@
 
 @if (idUsuario == null || rolUsuario == null)
 {
-    <script>
-        window.location.href = '/Auth/Login';
-    </script>
+    <script>window.location.href = '/Auth/Login';</script>
 }
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
-    <link href="~/css/StyleResponsive.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
-
-    <style>
-        body {
-            overflow-x: hidden;
-        }
-
-        .sidebar {
-            height: 100vh;
-            background-color: #343a40;
-            padding-top: 20px;
-            position: fixed;
-            width: 240px;
-            left: 0;
-        }
-
-            .sidebar a {
-                color: white;
-                padding: 10px 20px;
-                display: block;
-                text-decoration: none;
-            }
-
-                .sidebar a:hover {
-                    background-color: #495057;
-                }
-
-            .sidebar .logout-btn {
-                margin-top: auto;
-            }
-    </style>
+    <link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" />
 </head>
+
 <body>
+
+    <button id="hamburgerBtn" class="d-md-none"><i class="bi bi-list"></i></button>
+
     <div class="row g-0">
-        <button id="hamburgerBtn" onclick="document.querySelector('.sidebar').classList.toggle('show')">
-            ☰
-        </button>
         <!-- Sidebar -->
-        @if (Context.Session.GetInt32("Rol") == 1) // Admin
+        @if (Context.Session.GetInt32("Rol") == 1)
         {
-            <div class="col-md-3 col-lg-2 sidebar d-flex flex-column">
+            <div class="col-md-3 col-lg-2 sidebar d-none d-md-flex flex-column">
                 <div class="text-center mb-4">
                     <h5 class="text-white mb-1">Bienvenido</h5>
                     <h6 class="text-white">@Context.Session.GetString("NombreUsuario")</h6>
@@ -81,218 +51,111 @@
                 </form>
             </div>
         }
-        else if (Context.Session.GetInt32("Rol") == 2) // Técnico
-        {
-            <div class="col-md-3 col-lg-2 sidebar d-flex flex-column justify-content-between align-items-center text-white bg-dark py-4">
-                <div class="text-center mb-5">
-                    <h5 class="text-white mb-1">Bienvenido</h5>
-                    <h6 class="text-white">@Context.Session.GetString("NombreUsuario")</h6>
-                </div>
 
-                <form asp-action="Logout" asp-controller="Auth" method="post" class="mt-auto w-100 px-3 mb-4">
-                    @Html.AntiForgeryToken()
-                    <button class="btn btn-outline-light w-100"><i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión</button>
-                </form>
-            </div>
-        }
-
-    <!-- Contenido principal -->
-        <div class="col-md-9 col-lg-10 p-4" style="margin-left: 240px;">
-            <!-- Campana de notificaciones -->
-            <div class="d-flex justify-content-end align-items-center mb-3">
-                <div class="dropdown">
-                    <a class="btn btn-outline-dark position-relative" href="#" role="button" id="campanaNotificaciones" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-bell"></i>
-                        @if (ViewBag.NotificacionesNoLeidas > 0)
-                        {
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                @ViewBag.NotificacionesNoLeidas
-                            </span>
-                        }
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="campanaDropdown">
-                        @if (ViewBag.Notificaciones != null && ViewBag.Notificaciones.Count > 0)
-                        {
-                            foreach (var noti in ViewBag.Notificaciones)
-                            {
-                                <li class="dropdown-item @(noti.Leida ? "" : "fw-bold")">
-                                    <i class="bi bi-dot"></i> @noti.Mensaje
-                                    <br />
-                                    <small class="text-muted">@noti.Fecha?.ToString("dd/MM/yyyy HH:mm")</small>
-                                </li>
-                            }
-                        }
-                        else
-                        {
-                            <li class="dropdown-item text-muted">Sin notificaciones nuevas</li>
-                        }
-                    </ul>
-                </div>
-            </div>
-            <button id="hamburgerBtn"><i class="bi bi-list"></i></button>
+        <div class="col-md-9 col-lg-10 p-4 contenido" style="margin-left: 240px;">
             <h2>@ViewData["Title"]</h2>
 
-            <table class="table table-bordered mt-4">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>Tipo de Servicio</th>
-                        <th>Empresa</th>
-                        <th>Estado</th>
-                        <th>Subido por</th>
-                        <th>Días transcurridos</th>
-                        <th>Técnico Asignado</th>
-                        <th>Progreso</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
-                        <tr class="@(item.TecnicoAsignado == Context.Session.GetString("NombreUsuario")|| item.ColaboradorAsignado == Context.Session.GetString("NombreUsuario") ? "table-warning fw-bold" : "")">
-                            <td>
-                                @item.NumeroDocumento
-                            </td>
-                            <td>
-                                @if (item.Suministro)
-                                {
-                                    <i class="bi bi-box-seam text-primary me-1" data-bs-toggle="tooltip" title="Suministro"></i>
-                                }
-                                @if (item.Instalacion)
-                                {
-                                    <i class="bi bi-tools text-success me-1" data-bs-toggle="tooltip" title="Instalación"></i>
-                                }
-                                @if (item.Mantenimiento)
-                                {
-                                    <i class="bi bi-wrench-adjustable text-warning me-1" data-bs-toggle="tooltip" title="Mantenimiento"></i>
-                                }
-                            </td>
-                            <td>@(item.EmpresaDestino)</td>
-                            <td>
-                                @switch (item.Estado?.Trim().ToLower())
-                                {
-                                    case "pendiente":
-                                        <span class="badge bg-warning text-dark">Pendiente</span>
-                                        ; break;
-                                    case "en_proceso":
-                                        <span class="badge bg-info text-dark">En Proceso</span>
-                                        ; break;
-                                    case "completado":
-                                        <span class="badge bg-success">Completado</span>
-                                        ; break;
-                                    case "cancelado":
-                                        <span class="badge bg-danger">Cancelado</span>
-                                        ; break;
-                                    default:
-                                        <span class="badge bg-secondary">Desconocido</span>
-                                        ; break;
-                                }
-                            </td>
-                            <td>@item.SubidoPor</td>
-                            <td>
-                                @(item.Tipo == "Contrato"
-                                                            ? $"{item.DiasTranscurridosContrato} días"
-                                                            : $"{item.DiasTranscurridos} días")
-                            </td>
-                            <td>
-                                @item.TecnicoAsignado
-                                @if (item.TecnicoAsignado == Context.Session.GetString("NombreUsuario"))
-                                {
-                                    <span class="badge bg-primary ms-1">Asignado a ti</span>
-                                }
-                            </td>
-                            <td>
-                            @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
-                                {
-                                    string barraColor = "bg-success";
-                                    if (item.PorcentajeProgreso >= 100) barraColor = "bg-primary";
-                                    else if (item.PorcentajeProgreso > 80) barraColor = "bg-danger";
-                                    else if (item.PorcentajeProgreso > 50) barraColor = "bg-warning";
-
-                                    <div class="progress" title="Inicio: @(item.FechaInicio?.ToString("dd/MM/yyyy") ?? "N/A") - Fin: @(item.FechaFin?.ToString("dd/MM/yyyy") ?? "N/A")">
-                                        <div class="progress-bar @barraColor" role="progressbar"
-                                             style="width: @item.PorcentajeProgreso%;" aria-valuenow="@item.PorcentajeProgreso"
-                                             aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                    <span class="fw-bold">@item.PorcentajeProgreso% (@item.DiasTranscurridosContrato de @item.DiasTotalesContrato días)</span>
-                                }
-                                else
-                                {
-                                    <span>N/A</span>
-                                }
-                            </td>
-                            <td>
-                                <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-success btn-sm">Ver Detalle</a>
-                            </td>
+            <!-- Tabla en pantallas grandes -->
+            <div class="d-none d-md-block">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Tipo Servicio</th>
+                            <th>Empresa</th>
+                            <th>Estado</th>
+                            <th>Subido por</th>
+                            <th>Días</th>
+                            <th>Técnico</th>
+                            <th>Progreso</th>
+                            <th>Acciones</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.NumeroDocumento</td>
+                                <td>
+                                    @if (item.Suministro) { <i class="bi bi-box-seam text-primary me-1"></i> }
+                                    @if (item.Instalacion) { <i class="bi bi-tools text-success me-1"></i> }
+                                    @if (item.Mantenimiento) { <i class="bi bi-wrench-adjustable text-warning me-1"></i> }
+                                </td>
+                                <td>@item.EmpresaDestino</td>
+                                <td>@item.Estado</td>
+                                <td>@item.SubidoPor</td>
+                                <td>@(item.Tipo == "Contrato" ? item.DiasTranscurridosContrato : item.DiasTranscurridos)</td>
+                                <td>@item.TecnicoAsignado</td>
+                                <td>
+                                    @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
+                                    {
+                                        var barraColor = item.PorcentajeProgreso >= 100 ? "bg-primary" :
+                                                         item.PorcentajeProgreso > 80 ? "bg-danger" :
+                                                         item.PorcentajeProgreso > 50 ? "bg-warning" : "bg-success";
+
+                                        <div class="progress">
+                                            <div class="progress-bar @barraColor" style="width:@item.PorcentajeProgreso%"></div>
+                                        </div>
+                                    }
+                                    else { <span>N/A</span>; }
+                                </td>
+                                <td><a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-sm btn-success">Ver</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tarjetas en móviles -->
+            <div class="tarjetas-dashboard d-block d-md-none mt-3">
+                @foreach (var item in Model)
+                {
+                    <div class="card mb-3 p-3 shadow-sm">
+                        <h5>#@item.NumeroDocumento - @item.EmpresaDestino</h5>
+                        <p><strong>Tipo:</strong>
+                            @if (item.Suministro) { <i class="bi bi-box-seam text-primary me-1"></i> }
+                            @if (item.Instalacion) { <i class="bi bi-tools text-success me-1"></i> }
+                            @if (item.Mantenimiento) { <i class="bi bi-wrench-adjustable text-warning me-1"></i> }
+                        </p>
+                        <p><strong>Estado:</strong> @item.Estado</p>
+                        <p><strong>Subido por:</strong> @item.SubidoPor</p>
+                        <p><strong>Días:</strong> @(item.Tipo == "Contrato" ? item.DiasTranscurridosContrato : item.DiasTranscurridos)</p>
+                        <p><strong>Técnico:</strong> @item.TecnicoAsignado</p>
+                        <p><strong>Progreso:</strong>
+                            @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
+                            {
+                                var barraColor = item.PorcentajeProgreso >= 100 ? "bg-primary" :
+                                                 item.PorcentajeProgreso > 80 ? "bg-danger" :
+                                                 item.PorcentajeProgreso > 50 ? "bg-warning" : "bg-success";
+
+                                <div class="progress">
+                                    <div class="progress-bar @barraColor" style="width:@item.PorcentajeProgreso%"></div>
+                                </div>
+                            }
+                            else { <span>N/A</span>; }
+                        </p>
+                        <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-success btn-sm mt-2">Ver Detalle</a>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        tooltips.forEach(t => new bootstrap.Tooltip(t));
-    </script>
-    <script>
-        document.getElementById('campanaNotificaciones')?.addEventListener('click', () => {
-            fetch('/Dashboard/MarcarNotificacionesLeidas', {
-                method: 'POST',
-                headers: {
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-                }
-            })
-            .then(() => {
-                const badge = document.getElementById('notificacionBadge');
-                if (badge) {
-                    badge.textContent = '0';
-                    badge.classList.add('d-none');
-                }
-            });
+        const btn = document.getElementById('hamburgerBtn');
+        const sidebar = document.querySelector('.sidebar');
+
+        btn.addEventListener('click', function () {
+            sidebar.classList.toggle('show');
         });
-    </script>
-    <script>
-        function marcarNotificacionesComoLeidas() {
-            fetch('/Dashboard/MarcarNotificacionesComoLeidas', {
-                method: 'POST',
-                headers: {
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                }
-            }).then(response => {
-                if (response.ok) {
-                    console.log("Notificaciones marcadas como leídas");
-                }
-            });
-        }
 
-        // Cuando se haga clic en la campana
-        document.getElementById('campanaNotificaciones')?.addEventListener('click', marcarNotificacionesComoLeidas);
-    </script>
-    <script>
-        async function marcarNotificacionesComoLeidas() {
-            try {
-                const respuesta = await fetch('/Dashboard/MarcarNotificacionesComoLeidas', {
-                    method: 'POST',
-                    headers: {
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-                    }
-                });
-
-                if (respuesta.ok) {
-                    // Ocultar el badge de número rojo
-                    const badge = document.getElementById('badgeNoti');
-                    if (badge) {
-                        badge.style.display = 'none';
-                    }
-                }
-            } catch (error) {
-                console.error("Error al marcar notificaciones como leídas:", error);
+        document.addEventListener('click', function (event) {
+            if (sidebar.classList.contains('show') &&
+                !sidebar.contains(event.target) &&
+                event.target !== btn) {
+                sidebar.classList.remove('show');
             }
-        }
-
-        document.getElementById('campanaNotificaciones')?.addEventListener('click', marcarNotificacionesComoLeidas);
+        });
     </script>
 
 </body>
