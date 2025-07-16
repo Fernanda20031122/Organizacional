@@ -42,6 +42,10 @@ body {
     display: none;
   }
 
+  h2 {
+    padding-left: 50px; /* deja espacio para el botón */
+  }
+
   .sidebar.show {
     display: flex !important;
     flex-direction: column;
