@@ -1,0 +1,61 @@
+/* Evita scroll horizontal inesperado */
+body {
+  overflow-x: hidden;
+}
+
+/* Tarjetas en móvil */
+.tarjetas-historial .card {
+  border-radius: 0.5rem;
+  border: 1px solid #dee2e6;
+  background-color: #fff;
+  transition: transform 0.2s ease-in-out;
+}
+
+.tarjetas-historial .card:hover {
+  transform: translateY(-3px);
+}
+
+.tarjetas-historial h5 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.tarjetas-historial p {
+  margin: 0.25rem 0;
+}
+
+.tarjetas-historial .btn {
+  width: 100%;
+}
+
+/* Badge de asignación personalizado */
+.tarjetas-historial .badge.bg-primary {
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+
+/* Responsive: ajusta íconos dentro de tarjetas */
+.tarjetas-historial i {
+  font-size: 1rem;
+  vertical-align: middle;
+}
+
+/* Colorea borde de tarjeta si está asignada al usuario */
+.tarjetas-historial .border-warning {
+  border-width: 2px !important;
+}
+
+/* Tabla: mejora visibilidad en escritorio */
+.table th, .table td {
+  vertical-align: middle;
+}
+
+.table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+/* Botón de detalle */
+.btn-info.btn-sm {
+  padding: 0.375rem 0.75rem;
+}

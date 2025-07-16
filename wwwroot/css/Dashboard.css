@@ -66,5 +66,17 @@ body {
   .tarjetas-dashboard {
     display: block !important;
   }
+  .card .progress {
+    height: 15px;
+    border-radius: 10px;
+}
 
+.card .progress-bar {
+    font-size: 0.75rem;
+    line-height: 15px;
+}
+
+.card .text-muted {
+    margin-top: 5px;
+}
 }

@@ -65,7 +65,7 @@
                             <th>Empresa</th>
                             <th>Estado</th>
                             <th>Subido por</th>
-                            <th>Días</th>
+                            <th>Días Transcurridos</th>
                             <th>Técnico</th>
                             <th>Progreso</th>
                             <th>Acciones</th>
@@ -73,35 +73,83 @@
                     </thead>
                     <tbody>
                         @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td>@item.NumeroDocumento</td>
-                                <td>
-                                    @if (item.Suministro) { <i class="bi bi-box-seam text-primary me-1"></i> }
-                                    @if (item.Instalacion) { <i class="bi bi-tools text-success me-1"></i> }
-                                    @if (item.Mantenimiento) { <i class="bi bi-wrench-adjustable text-warning me-1"></i> }
-                                </td>
-                                <td>@item.EmpresaDestino</td>
-                                <td>@item.Estado</td>
-                                <td>@item.SubidoPor</td>
-                                <td>@(item.Tipo == "Contrato" ? item.DiasTranscurridosContrato : item.DiasTranscurridos)</td>
-                                <td>@item.TecnicoAsignado</td>
-                                <td>
-                                    @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
-                                    {
-                                        var barraColor = item.PorcentajeProgreso >= 100 ? "bg-primary" :
-                                                         item.PorcentajeProgreso > 80 ? "bg-danger" :
-                                                         item.PorcentajeProgreso > 50 ? "bg-warning" : "bg-success";
+                    {
+                        <tr class="@(item.TecnicoAsignado == Context.Session.GetString("NombreUsuario") ? "table-warning fw-bold" : "")">
+                            <td>
+                                @item.NumeroDocumento
+                            </td>
+                            <td>
+                                @if (item.Suministro)
+                                {
+                                    <i class="bi bi-box-seam text-primary me-1" data-bs-toggle="tooltip" title="Suministro"></i>
+                                }
+                                @if (item.Instalacion)
+                                {
+                                    <i class="bi bi-tools text-success me-1" data-bs-toggle="tooltip" title="Instalación"></i>
+                                }
+                                @if (item.Mantenimiento)
+                                {
+                                    <i class="bi bi-wrench-adjustable text-warning me-1" data-bs-toggle="tooltip" title="Mantenimiento"></i>
+                                }
+                            </td>
+                            <td>@item.EmpresaDestino</td>
+                            <td>
+                                @switch (item.Estado?.Trim().ToLower())
+                                {
+                                    case "pendiente":
+                                        <span class="badge bg-warning text-dark">Pendiente</span>
+                                        ; break;
+                                    case "en_proceso":
+                                        <span class="badge bg-info text-dark">En Proceso</span>
+                                        ; break;
+                                    case "completado":
+                                        <span class="badge bg-success">Completado</span>
+                                        ; break;
+                                    case "cancelado":
+                                        <span class="badge bg-danger">Cancelado</span>
+                                        ; break;
+                                    default:
+                                        <span class="badge bg-secondary">Desconocido</span>
+                                        ; break;
+                                }
+                        </td>
+                        <td>@item.SubidoPor</td>
+                        <td>
+                            @(item.Tipo == "Contrato"
+                                                        ? $"{item.DiasTranscurridosContrato} días"
+                                                        : $"{item.DiasTranscurridos} días")
+                        </td>
+                        <td>
+                            @item.TecnicoAsignado
+                            @if (item.TecnicoAsignado == Context.Session.GetString("NombreUsuario"))
+                                {
+                                    <span class="badge bg-primary ms-1">Asignado a ti</span>
+                                }
+                            </td>
+                            <td>
+                            @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
+                            {
+                                var barraColor = item.PorcentajeProgreso >= 100 ? "bg-primary" :
+                                                item.PorcentajeProgreso > 80 ? "bg-danger" :
+                                                item.PorcentajeProgreso > 50 ? "bg-warning" : "bg-success";
 
-                                        <div class="progress">
-                                            <div class="progress-bar @barraColor" style="width:@item.PorcentajeProgreso%"></div>
-                                        </div>
-                                    }
-                                    else { <span>N/A</span>; }
-                                </td>
-                                <td><a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-sm btn-success">Ver</a></td>
-                            </tr>
-                        }
+                                <div class="progress" title="Inicio: @(item.FechaInicio?.ToString("dd/MM/yyyy") ?? "N/A") - Fin: @(item.FechaFin?.ToString("dd/MM/yyyy") ?? "N/A")">
+                                    <div class="progress-bar @barraColor" style="width:@item.PorcentajeProgreso%"></div>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    @item.PorcentajeProgreso% (@item.DiasTranscurridosContrato de @item.DiasTotalesContrato días)
+                                </small>
+                            }
+                            else
+                            {
+                                <span>N/A</span>
+                            }
+                            </td>
+                            <td>
+                                <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-info btn-sm">Ver Detalle</a>
+                            </td>
+                        </tr>
+                    }
                     </tbody>
                 </table>
             </div>
@@ -117,22 +165,54 @@
                             @if (item.Instalacion) { <i class="bi bi-tools text-success me-1"></i> }
                             @if (item.Mantenimiento) { <i class="bi bi-wrench-adjustable text-warning me-1"></i> }
                         </p>
-                        <p><strong>Estado:</strong> @item.Estado</p>
+                        <p><strong>Estado:</strong>
+                            @switch (item.Estado?.Trim().ToLower())
+                            {
+                                case "pendiente":
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                    ; break;
+                                case "en_proceso":
+                                    <span class="badge bg-info text-dark">En Proceso</span>
+                                    ; break;
+                                case "completado":
+                                    <span class="badge bg-success">Completado</span>
+                                    ; break;
+                                case "cancelado":
+                                    <span class="badge bg-danger">Cancelado</span>
+                                    ; break;
+                                default:
+                                    <span class="badge bg-secondary">Desconocido</span>
+                                    ; break;
+                            }
+                        </p>
                         <p><strong>Subido por:</strong> @item.SubidoPor</p>
-                        <p><strong>Días:</strong> @(item.Tipo == "Contrato" ? item.DiasTranscurridosContrato : item.DiasTranscurridos)</p>
+                        <p><strong>Días Transcurridos:</strong> @(item.Tipo == "Contrato" ? item.DiasTranscurridosContrato : item.DiasTranscurridos)</p>
                         <p><strong>Técnico:</strong> @item.TecnicoAsignado</p>
                         <p><strong>Progreso:</strong>
-                            @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
-                            {
-                                var barraColor = item.PorcentajeProgreso >= 100 ? "bg-primary" :
-                                                 item.PorcentajeProgreso > 80 ? "bg-danger" :
-                                                 item.PorcentajeProgreso > 50 ? "bg-warning" : "bg-success";
-
-                                <div class="progress">
-                                    <div class="progress-bar @barraColor" style="width:@item.PorcentajeProgreso%"></div>
+                        @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
+                        {
+                            var barraColor = item.PorcentajeProgreso >= 100 ? "bg-primary" :
+                                            item.PorcentajeProgreso > 80 ? "bg-danger" :
+                                            item.PorcentajeProgreso > 50 ? "bg-warning" : "bg-success";
+                                            
+                            <span class="d-inline-block" style="min-width: 40px;">
+                            <div class="progress mb-1">
+                                <div class="progress-bar @barraColor"
+                                    role="progressbar"
+                                    style="width:@item.PorcentajeProgreso%"
+                                    aria-valuenow="@item.PorcentajeProgreso"
+                                    aria-valuemin="0" aria-valuemax="100">
                                 </div>
-                            }
-                            else { <span>N/A</span>; }
+                            </div>
+                            </span>
+                            <p class="text-center small text-muted fw-semibold">
+                                @item.PorcentajeProgreso% (@item.DiasTranscurridosContrato de @item.DiasTotalesContrato días)
+                            </p>
+                        }
+                        else
+                        {
+                            <span>N/A</span>;
+                        }
                         </p>
                         <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-success btn-sm mt-2">Ver Detalle</a>
                     </div>
