@@ -10,7 +10,9 @@ body {
   width: 240px;
   left: 0;
   z-index: 1000;
-  display: flex;
+  display: flex;  
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .sidebar a {
@@ -22,6 +24,14 @@ body {
 
 .sidebar a:hover {
   background-color: #495057;
+}
+
+.sidebar-content {
+  flex-grow: 1; /* Ocupa todo el espacio disponible arriba */
+}
+
+.logout-section {
+  padding: 0 20px 20px; /* Espaciado interior */
 }
 
 #hamburgerBtn {
@@ -87,4 +97,10 @@ body {
 .card .text-muted {
     margin-top: 5px;
 }
+.logout-section {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+}
+
 }
