@@ -26,7 +26,9 @@
 
 <body>
 
-    <button id="hamburgerBtn" class="d-md-none"><i class="bi bi-list"></i></button>
+    <button id="hamburgerBtn" class="d-md-none">
+    ☰
+    </button>
 
     <div class="row g-0">
         <!-- Sidebar -->
@@ -53,7 +55,7 @@
         }
         else if (Context.Session.GetInt32("Rol") == 2) // Técnico
         {
-            <div class="col-md-3 col-lg-2 sidebar d-flex flex-column justify-content-between align-items-center text-white bg-dark py-4">
+            <div class="col-md-3 col-lg-2 sidebar d-none d-md-flex flex-column justify-content-between align-items-center text-white bg-dark py-4">
                 <div class="text-center mb-5">
                     <h5 class="text-white mb-1">Bienvenido</h5>
                     <h6 class="text-white">@Context.Session.GetString("NombreUsuario")</h6>
@@ -236,18 +238,24 @@
     </div>
 
     <script>
-        const btn = document.getElementById('hamburgerBtn');
-        const sidebar = document.querySelector('.sidebar');
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn = document.getElementById('hamburgerBtn');
+            const sidebar = document.querySelector('.sidebar');
 
-        btn.addEventListener('click', function () {
-            sidebar.classList.toggle('show');
-        });
+            if (btn && sidebar) {
+                btn.addEventListener('click', function () {
+                    sidebar.classList.toggle('show');
+                });
 
-        document.addEventListener('click', function (event) {
-            if (sidebar.classList.contains('show') &&
-                !sidebar.contains(event.target) &&
-                event.target !== btn) {
-                sidebar.classList.remove('show');
+                document.addEventListener('click', function (event) {
+                    if (
+                        sidebar.classList.contains('show') &&
+                        !sidebar.contains(event.target) &&
+                        event.target !== btn
+                    ) {
+                        sidebar.classList.remove('show');
+                    }
+                });
             }
         });
     </script>
