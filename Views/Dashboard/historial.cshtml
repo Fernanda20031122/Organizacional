@@ -15,7 +15,58 @@
 </head>
 <body>
     <div class="row g-0">
-        
+
+                <!-- Sidebar -->
+        @if (Context.Session.GetInt32("Rol") == 1)
+        {
+            <div class="col-md-3 col-lg-2 sidebar d-none d-md-flex flex-column">
+                <div class="sidebar-content">
+                    <div class="text-center mb-4">
+                        <h5 class="text-white mb-1">Bienvenido</h5>
+                        <h6 class="text-white">@Context.Session.GetString("NombreUsuario")</h6>
+                    </div>
+
+                    <a asp-controller="Dashboard" asp-action="Index"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                    <a asp-controller="Dashboard" asp-action="Crear"><i class="bi bi-upload me-2"></i>Subir Pendiente</a>
+                    <a asp-controller="Usuarios" asp-action="CrearTecnico"><i class="bi bi-person-plus me-2"></i>Crear Técnico</a>
+                    <a asp-controller="Usuarios" asp-action="CrearAdministrador"><i class="bi bi-person-gear me-2"></i>Crear Admin</a>
+                    <a asp-controller="Usuarios" asp-action="Index"><i class="bi bi-people me-2"></i>Lista de Usuarios</a>
+                    <a asp-controller="Dashboard" asp-action="Historial"><i class="bi bi-archive me-2"></i>Historial</a>
+                </div>
+
+                <div class="logout-section">
+                    <form asp-action="Logout" asp-controller="Auth" method="post" class="mt-auto w-100 px-3 mb-4">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-danger w-100">
+                            <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+        else if (Context.Session.GetInt32("Rol") == 2) // Técnico
+        {
+            <div class="col-md-3 col-lg-2 sidebar d-none d-md-flex flex-column justify-content-between text-white bg-dark py-4 px-2">
+                <div class="sidebar-content">
+                    <div class="text-center mb-5">
+                        <h5 class="text-white mb-1">Bienvenido</h5>
+                        <h6 class="text-white">@Context.Session.GetString("NombreUsuario")</h6>
+                    </div>
+
+                    <a asp-controller="Dashboard" asp-action="Index"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                    <a asp-controller="Dashboard" asp-action="Historial"><i class="bi bi-archive me-2"></i>Historial</a>
+                </div>
+
+                <div class="logout-section">
+                <form asp-action="Logout" asp-controller="Auth" method="post" class="mt-auto w-100 px-3 mb-4">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-danger w-100">
+                        <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
+                    </button>
+                </form>
+                </div>
+            </div>
+        }
         <!-- Contenido principal -->
         <div class="col-md-9 col-lg-10 p-4 contenido">
             <h2>@ViewData["Title"]</h2>
@@ -86,13 +137,14 @@
                                         }
                                 </td>
                                 <td>
-                                        <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-info btn-sm">Ver Detalle</a>
+                                        <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-success btn-sm mt-2">Ver Detalle</a>
                                 </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
+            
             <!-- Tarjetas para móviles -->
             <div class="tarjetas-historial d-block d-md-none mt-4">
                 @foreach (var item in Model)
