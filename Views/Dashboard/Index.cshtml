@@ -189,7 +189,8 @@
             <div class="tarjetas-dashboard d-block d-md-none mt-3">
                 @foreach (var item in Model)
                 {
-                        var esAsignadoATi = item.TecnicoAsignado == Context.Session.GetString("NombreUsuario");
+                        var esAsignadoATi = item.TecnicoAsignado == Context.Session.GetString("NombreUsuario") ||
+                                            item.ColaboradorAsignado == Context.Session.GetString("NombreUsuario");
                         var claseResaltado = esAsignadoATi ? "bg-warning-subtle border border-warning" : "";
                     
                     <div class="card shadow-sm mb-3">
@@ -225,7 +226,9 @@
                         <p><strong>Días Transcurridos:</strong> @(item.Tipo == "Contrato" ? item.DiasTranscurridosContrato : item.DiasTranscurridos)</p>
                         <p><strong>Técnico:</strong> 
                         @item.TecnicoAsignado
-                        @if (item.TecnicoAsignado == Context.Session.GetString("NombreUsuario"))
+                        @if (item.TecnicoAsignado == Context.Session.GetString("NombreUsuario") || 
+                            item.ColaboradorAsignado == Context.Session.GetString("NombreUsuario")
+                        )
                         {
                             <span class="badge bg-primary ms-1">Asignado a ti</span>
                         }
