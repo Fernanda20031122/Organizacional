@@ -334,10 +334,12 @@ namespace Organizacional.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // Vista de detalle del documento
         public async Task<IActionResult> Detalle(int id)
         {
             var documento = await _context.Documentos
                 .Include(d => d.IdUsuarioSubioNavigation)
+                .Include(d => d.MaterialesPendientes)
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
                 .Include(d => d.Tareas)
@@ -349,6 +351,29 @@ namespace Organizacional.Controllers
                 return NotFound();
 
             return View(documento);
+        }
+
+        // POST: Solicitar Materiales         // POST: Registrar herramienta en sitio
+        [HttpPost]
+        public async Task<IActionResult> RegistrarMaterial(MaterialesPendiente material)
+        {
+            // lógica para materiales solicitados
+            material.FechaRegistro = DateTime.Now;
+            _context.MaterialesPendientes.Add(material);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Detalle", new { id = material.IdDocumento });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RegistrarHerramienta(MaterialesPendiente herramienta)
+        {
+            // lógica para herramientas dejadas
+            herramienta.FechaRegistro = DateTime.Now;
+            _context.MaterialesPendientes.Add(herramienta);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Detalle", new { id = herramienta.IdDocumento });
         }
 
         [HttpPost]

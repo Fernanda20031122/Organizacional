@@ -26,6 +26,7 @@ namespace Organizacional.Models.ViewModels
         public bool Suministro { get; set; }
         public bool Instalacion { get; set; }
         public bool Mantenimiento { get; set; }
+        public bool Soporte { get; set; }
 
         // Mantenimiento
         public int? CantidadMantenimientos { get; set; }

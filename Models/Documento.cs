@@ -30,6 +30,7 @@ public partial class Documento
     public bool? Instalacion { get; set; }
 
     public bool? Mantenimiento { get; set; }
+    public bool? Soporte { get; set; }
 
     public DateOnly? FechaInicio { get; set; }
 
@@ -42,7 +43,8 @@ public partial class Documento
     public virtual ICollection<Historial> Historials { get; set; } = new List<Historial>();
 
     public virtual Usuario? IdUsuarioSubioNavigation { get; set; }
-
+    
+    public ICollection<MaterialesPendiente> MaterialesPendientes { get; set; }
     public virtual ICollection<Mantenimiento> Mantenimientos { get; set; } = new List<Mantenimiento>();
 
     public virtual ICollection<SedesDocumento> SedesDocumentos { get; set; } = new List<SedesDocumento>();

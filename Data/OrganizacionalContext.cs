@@ -19,6 +19,7 @@ public partial class OrganizacionalContext : DbContext
 
 
     public virtual DbSet<Documento> Documentos { get; set; }
+    public virtual DbSet<MaterialesPendiente> MaterialesPendientes { get; set; }
 
     public virtual DbSet<Historial> Historials { get; set; }
 

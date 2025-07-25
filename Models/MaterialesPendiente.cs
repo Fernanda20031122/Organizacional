@@ -10,11 +10,18 @@ namespace Organizacional.Models
         public int Id { get; set; }
 
         [Required]
-        public int IdTarea { get; set; }
+        [Column("IdDocumento")]  // Esto asegura que EF use el nombre correcto
+        public int IdDocumento { get; set; }
+
+        [ForeignKey("IdDocumento")]
+        public Documento Documento { get; set; }
 
         [Required]
         [StringLength(255)]
         public string NombreMaterial { get; set; }
+
+        [StringLength(255)]
+        public string? NombreHerramientaDejada { get; set; }
 
         [StringLength(255)]
         public string? UbicacionDejado { get; set; }
@@ -23,9 +30,5 @@ namespace Organizacional.Models
         public bool EsSolicitado { get; set; }
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
-
-        // Relación con la tarea
-        [ForeignKey("IdTarea")]
-        public virtual Tarea Tarea { get; set; }
     }
 }

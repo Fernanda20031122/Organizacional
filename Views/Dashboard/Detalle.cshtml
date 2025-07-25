@@ -49,6 +49,7 @@
         @(Model.Suministro == true ? "Suministro " : "")
         @(Model.Instalacion == true ? "Instalación " : "")
         @(Model.Mantenimiento == true ? "Mantenimiento" : "")
+        @(Model.Soporte == true ? "Soporte" : "")
     </p>
 
     <p><strong>Técnico asignado:</strong> @tecnico</p>
@@ -73,6 +74,60 @@
     </div>
     
 </div>
+
+<h4 class="mt-4">🧾 Materiales solicitados</h4>
+@if (Model.MaterialesPendientes != null && Model.MaterialesPendientes.Any(m => m.EsSolicitado))
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Nombre del material</th>
+                <th>Fecha</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var m in Model.MaterialesPendientes.Where(m => m.EsSolicitado))
+            {
+                <tr>
+                    <td>@m.NombreMaterial</td>
+                    <td>@m.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No se han registrado materiales para este pendiente.</p>
+}
+
+<h4 class="mt-4">🧰 Herramientas dejadas en sitio</h4>
+@if (Model.MaterialesPendientes != null && Model.MaterialesPendientes.Any(m => !m.EsSolicitado && !string.IsNullOrEmpty(m.NombreHerramientaDejada)))
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Herramienta</th>
+                <th>Ubicación</th>
+                <th>Fecha</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var h in Model.MaterialesPendientes.Where(m => !m.EsSolicitado && !string.IsNullOrEmpty(m.NombreHerramientaDejada)))
+            {
+                <tr>
+                    <td>@h.NombreHerramientaDejada</td>
+                    <td>@h.UbicacionDejado</td>
+                    <td>@h.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No se han registrado herramientas dejadas en este pendiente.</p>
+}
 @if (Model.Tareas != null && Model.Tareas.Any())
 {
     <h4>Estado del Pendiente</h4>
@@ -103,6 +158,7 @@
         </div>
     }
 }
+    
 @if (tieneMantenimientos)
 {
     <h4>Mantenimientos</h4>
@@ -214,6 +270,63 @@
         }
     </div>
 }
+<hr />
+<h4>Registrar materiales o herramientas</h4>
+
+<div class="mb-3">
+    <!-- Botón: Solicitar Materiales -->
+    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#formMateriales">Solicitar Materiales</button>
+
+    <!-- Botón: Registro herramienta en sitio -->
+    <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#formHerramientas">Registro herramienta en sitio</button>
+</div>
+
+<!-- FORMULARIO PARA SOLICITAR MATERIALES -->
+<div class="collapse" id="formMateriales">
+    <form asp-action="RegistrarMaterial" asp-controller="Dashboard" method="post">
+        <input type="hidden" name="IdDocumento" value="@Model.IdDocumento" />
+
+        <div class="form-group">
+            <label>Nombre del material</label>
+            <input type="text" name="NombreMaterial" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+            <label>¿Es solicitado?</label>
+            <select name="EsSolicitado" class="form-control">
+                <option value="true">Sí</option>
+                <option value="false">No</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-2">Solicitar Material</button>
+    </form>
+</div>
+
+<!-- FORMULARIO PARA REGISTRAR HERRAMIENTA -->
+<div class="collapse" id="formHerramientas">
+    <form asp-action="RegistrarHerramienta" asp-controller="Dashboard" method="post">
+        <input type="hidden" name="IdDocumento" value="@Model.IdDocumento" />
+        
+        <div class="form-group">
+            <label>Nombre de herramienta dejada (opcional)</label>
+            <input type="text" name="NombreHerramientaDejada" class="form-control" />
+        </div>
+
+        <div class="form-group">
+            <label>Ubicación donde se dejó (opcional)</label>
+            <input type="text" name="UbicacionDejado" class="form-control" />
+        </div>
+
+        <!-- EsSolicitado false por defecto ya que esto es para herramienta -->
+        <input type="hidden" name="EsSolicitado" value="false" />
+
+        <!-- Material genérico ya que no aplica -->
+        <input type="hidden" name="NombreMaterial" value="(No aplica)" />
+
+        <button type="submit" class="btn btn-warning mt-2">Registrar Herramienta</button>
+    </form>
+</div>
 
 @if (Context.Session.GetInt32("Rol") != 2) // Solo si NO es técnico
 {
