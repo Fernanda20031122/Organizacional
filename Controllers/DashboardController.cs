@@ -80,13 +80,14 @@ namespace Organizacional.Controllers
                 TecnicoAsignado = (d.Suministro.GetValueOrDefault() || d.Instalacion.GetValueOrDefault() || d.Mantenimiento.GetValueOrDefault())
                     ? d.Tareas.FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado"
                     : "N/A",
-                    
+
                 ColaboradorAsignado = d.Tareas.FirstOrDefault(t => t.IdColaboradorAsignadoNavigation != null)?.IdColaboradorAsignadoNavigation?.Nombre ?? "No asignado",
 
                 // Estos los usas para mostrar viñetas o íconos en la vista
                 Suministro = d.Suministro ?? false,
                 Instalacion = d.Instalacion ?? false,
-                Mantenimiento = d.Mantenimiento ?? false
+                Mantenimiento = d.Mantenimiento ?? false,
+                Soporte = d.Soporte ?? false
 
             }).ToList();
 
@@ -259,6 +260,7 @@ namespace Organizacional.Controllers
                 Suministro = modelo.Suministro,
                 Instalacion = modelo.Instalacion,
                 Mantenimiento = modelo.Mantenimiento,
+                Soporte = modelo.Soporte,
                 FechaSubida = DateOnly.FromDateTime(DateTime.Today),
                 Asignada = false,
                 IdUsuarioSubio = idUsuarioSubio
