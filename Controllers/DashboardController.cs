@@ -379,6 +379,26 @@ namespace Organizacional.Controllers
         }
 
         [HttpPost]
+        public IActionResult ActualizarEntregaMateriales(int idDocumento, int[] materialesEntregados)
+        {
+            if (materialesEntregados != null && materialesEntregados.Length > 0)
+            {
+                var materiales = _context.MaterialesPendientes
+                    .Where(m => m.IdDocumento == idDocumento && materialesEntregados.Contains(m.Id))
+                    .ToList();
+
+                foreach (var material in materiales)
+                {
+                    material.MaterialEntregado = true;
+                }
+
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction("Detalle", new { id = idDocumento });
+        }
+
+        [HttpPost]
         public async Task<IActionResult> CambiarEstadoTarea(int idTarea, string nuevoEstado)
         {
             var tarea = await _context.Tareas
@@ -583,6 +603,7 @@ namespace Organizacional.Controllers
 
             return RedirectToAction("Detalle", new { id = mantenimiento.IdDocumento });
         }
+
         [HttpGet]
         public async Task<IActionResult> Historial()
         {

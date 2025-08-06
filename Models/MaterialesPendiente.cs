@@ -28,6 +28,7 @@ namespace Organizacional.Models
 
         [Required]
         public bool EsSolicitado { get; set; }
+        public bool MaterialEntregado { get; set; }
 
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
     }

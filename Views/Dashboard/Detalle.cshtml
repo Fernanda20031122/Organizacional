@@ -11,7 +11,9 @@
 <h2>Detalle del Pendiente</h2>
 
 <div class="card p-3 mb-4 shadow">
-    <h4>Información del Documento</h4>
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Informacion del Documento</h5>
+    </div>
     <p><strong>Tipo:</strong> @Model.TipoDocumento</p>
     <p><strong>Número:</strong> @Model.NumeroDocumento</p>
     <p><strong>Descripción:</strong> @Model.Descripcion</p>
@@ -51,117 +53,36 @@
         @(Model.Mantenimiento == true ? "Mantenimiento" : "")
         @(Model.Soporte == true ? "Soporte" : "")
     </p>
+        <!-- ASIGNACIÓN -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Asignación</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Técnico asignado:</strong> @tecnico</p>
+            <p><strong>Colaborador asignado:</strong> @colaborador</p>
 
-    <p><strong>Técnico asignado:</strong> @tecnico</p>
-    <p><strong>Colaborador asignado:</strong> @colaborador</p>
-
-    <div class="card border-secondary mt-4">
-        <div class="card-header bg-secondary text-white">Acciones Disponibles</div>
-        <div class="card-body d-flex gap-3">
-            @if (tecnico == "No asignado" && (Model.Instalacion == true || Model.Mantenimiento == true))
-            {
-                <a asp-action="AsignarTecnico" asp-route-id="@Model.IdDocumento" class="btn btn-warning">
-                    <i class="bi bi-person-gear"></i> Asignar Técnico
-                </a>
-            }
-            @if (colaborador == "No asignado")
-            {
-                <a asp-action="AsignarColaborador" asp-route-id="@Model.IdDocumento" class="btn btn-primary">
-                    <i class="bi bi-person-plus"></i> Asignar Colaborador
-                </a>
-            }
+            <div class="d-flex gap-3 mt-3">
+                @if (tecnico == "No asignado" && (Model.Instalacion == true || Model.Mantenimiento == true))
+                {
+                    <a asp-action="AsignarTecnico" asp-route-id="@Model.IdDocumento" class="btn btn-warning">
+                        <i class="bi bi-person-gear"></i> Asignar Técnico
+                    </a>
+                }
+                @if (colaborador == "No asignado")
+                {
+                    <a asp-action="AsignarColaborador" asp-route-id="@Model.IdDocumento" class="btn btn-primary">
+                        <i class="bi bi-person-plus"></i> Asignar Colaborador
+                    </a>
+                }
+            </div>
         </div>
     </div>
-    
-</div>
-
-<h4 class="mt-4">🧾 Materiales solicitados</h4>
-@if (Model.MaterialesPendientes != null && Model.MaterialesPendientes.Any(m => m.EsSolicitado))
+    @if (tieneMantenimientos)
 {
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Nombre del material</th>
-                <th>Fecha</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var m in Model.MaterialesPendientes.Where(m => m.EsSolicitado))
-            {
-                <tr>
-                    <td>@m.NombreMaterial</td>
-                    <td>@m.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>No se han registrado materiales para este pendiente.</p>
-}
-
-<h4 class="mt-4">🧰 Herramientas dejadas en sitio</h4>
-@if (Model.MaterialesPendientes != null && Model.MaterialesPendientes.Any(m => !m.EsSolicitado && !string.IsNullOrEmpty(m.NombreHerramientaDejada)))
-{
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Herramienta</th>
-                <th>Ubicación</th>
-                <th>Fecha</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var h in Model.MaterialesPendientes.Where(m => !m.EsSolicitado && !string.IsNullOrEmpty(m.NombreHerramientaDejada)))
-            {
-                <tr>
-                    <td>@h.NombreHerramientaDejada</td>
-                    <td>@h.UbicacionDejado</td>
-                    <td>@h.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>No se han registrado herramientas dejadas en este pendiente.</p>
-}
-@if (Model.Tareas != null && Model.Tareas.Any())
-{
-    <h4>Estado del Pendiente</h4>
-    @foreach (var tarea in Model.Tareas)
-    {
-        <div class="mt-3">
-            <p>
-                <strong>Estado actual:</strong>
-                <span class="badge
-                    @(tarea.Estado == "pendiente" ? "bg-warning text-dark" :
-                    tarea.Estado == "en_proceso" ? "bg-info text-dark" :
-                    tarea.Estado == "completado" ? "bg-success" :
-                    tarea.Estado == "cancelado" ? "bg-danger" : "bg-secondary")">
-                    @tarea.Estado       
-                </span>
-            </p>
-
-            <form asp-action="CambiarEstadoTarea" asp-controller="Dashboard" method="post" class="d-flex align-items-center gap-2">
-                <input type="hidden" name="idTarea" value="@tarea.IdTarea" />
-                <select name="nuevoEstado" class="form-select w-auto">
-                    @Html.Raw($"<option value='pendiente' {(tarea.Estado == "pendiente" ? "selected" : "")}>Pendiente</option>")
-                    @Html.Raw($"<option value='en_proceso' {(tarea.Estado == "en_proceso" ? "selected" : "")}>En proceso</option>")
-                    @Html.Raw($"<option value='completado' {(tarea.Estado == "completado" ? "selected" : "")}>Completado</option>")
-                    @Html.Raw($"<option value='cancelado' {(tarea.Estado == "cancelado" ? "selected" : "")}>Cancelado</option>")
-                </select>
-                <button type="submit" class="btn btn-primary btn-sm">Actualizar estado</button>
-            </form>
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Mantenimientos</h5>
         </div>
-    }
-}
-    
-@if (tieneMantenimientos)
-{
-    <h4>Mantenimientos</h4>
 
     <!-- Tabla visible solo en pantallas medianas en adelante -->
     <div class="table-responsive d-none d-md-block">
@@ -227,7 +148,6 @@ else
         {
             <div class="card mb-3 shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Mantenimiento</h5>
                     <p><strong>Total Programados:</strong> @m.TotalMantenimientos</p>
                     <p><strong>Realizados:</strong> @m.MantenimientoRealizado</p>
                     <p><strong>Fechas Realizadas:</strong>
@@ -270,64 +190,161 @@ else
         }
     </div>
 }
-<hr />
-<h4>Registrar materiales o herramientas</h4>
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Materiales y Herramientas</h5>
+    </div>
 
-<div class="mb-3">
-    <!-- Botón: Solicitar Materiales -->
-    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#formMateriales">Solicitar Materiales</button>
+    <div class="card-body">
+        <h4 class="mt-4">🧾 Materiales solicitados</h4>
+        @if (Model.MaterialesPendientes != null && Model.MaterialesPendientes.Any(m => m.EsSolicitado))
+        {
+            <form method="post" asp-action="ActualizarEntregaMateriales">
+                <input type="hidden" name="idDocumento" value="@Model.IdDocumento" />
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nombre del material</th>
+                            <th>Fecha</th>
+                            <th>Entregado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model.MaterialesPendientes.Where(m => m.EsSolicitado))
+                        {
+                            <tr>
+                                <td>@m.NombreMaterial</td>
+                                <td>@m.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <input type="checkbox" name="materialesEntregados" value="@m.Id" @(m.MaterialEntregado ? "checked disabled" : "") />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
 
-    <!-- Botón: Registro herramienta en sitio -->
-    <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#formHerramientas">Registro herramienta en sitio</button>
-</div>
+                <button type="submit" class="btn btn-success mt-2">Guardar entregados</button>
+            </form>
+        }
+        else
+        {
+            <p>No se han registrado materiales para este pendiente.</p>
+        }
 
-<!-- FORMULARIO PARA SOLICITAR MATERIALES -->
-<div class="collapse" id="formMateriales">
-    <form asp-action="RegistrarMaterial" asp-controller="Dashboard" method="post">
-        <input type="hidden" name="IdDocumento" value="@Model.IdDocumento" />
+        <h4 class="mt-4">🧰 Herramientas dejadas en sitio</h4>
+        @if (Model.MaterialesPendientes != null && Model.MaterialesPendientes.Any(m => !m.EsSolicitado && !string.IsNullOrEmpty(m.NombreHerramientaDejada)))
+        {
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Herramienta</th>
+                        <th>Ubicación</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var h in Model.MaterialesPendientes.Where(m => !m.EsSolicitado && !string.IsNullOrEmpty(m.NombreHerramientaDejada)))
+                    {
+                        <tr>
+                            <td>@h.NombreHerramientaDejada</td>
+                            <td>@h.UbicacionDejado</td>
+                            <td>@h.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No se han registrado herramientas dejadas en este pendiente.</p>
+        }
 
-        <div class="form-group">
-            <label>Nombre del material</label>
-            <input type="text" name="NombreMaterial" class="form-control" required />
+            <!-- BOTONES -->
+            <div class="d-flex gap-3 mt-3">
+                <!-- Botón: Solicitar Materiales -->
+                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#formMateriales">Solicitar Materiales</button>
+
+                <!-- Botón: Registro herramienta en sitio -->
+                <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#formHerramientas">Registro herramienta en sitio</button>
+            </div>
+
+            <!-- FORMULARIO PARA SOLICITAR MATERIALES -->
+            <div class="collapse" id="formMateriales">
+                <form asp-action="RegistrarMaterial" asp-controller="Dashboard" method="post">
+                    <input type="hidden" name="IdDocumento" value="@Model.IdDocumento" />
+                    <div class="mb-2">
+                        <label>Nombre del material</label>
+                        <input type="text" name="NombreMaterial" class="form-control" required />
+                    </div>
+                    <div class="mb-2">
+                        <label>¿Es solicitado?</label>
+                        <select name="EsSolicitado" class="form-control">
+                            <option value="true">Sí</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">Solicitar</button>
+                </form>
+            </div>
+
+            <!-- FORMULARIO PARA REGISTRAR HERRAMIENTA -->
+            <div class="collapse" id="formHerramientas">
+                <form asp-action="RegistrarHerramienta" asp-controller="Dashboard" method="post">
+                    <input type="hidden" name="IdDocumento" value="@Model.IdDocumento" />
+                    <div class="mb-2">
+                        <label>Nombre de herramienta</label>
+                        <input type="text" name="NombreHerramientaDejada" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label>Ubicación donde se dejó</label>
+                        <input type="text" name="UbicacionDejado" class="form-control" />
+                    </div>
+                    <input type="hidden" name="EsSolicitado" value="false" />
+                    <input type="hidden" name="NombreMaterial" value="(No aplica)" />
+                    <button type="submit" class="btn btn-warning mt-2">Registrar Herramienta</button>
+                </form>
+            </div>
+    </div>
+</div> 
+<!-- CAMBIO DE ESTADO -->
+@if (Model.Tareas != null && Model.Tareas.Any())
+{
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Estado del Pendiente</h5>
         </div>
-
-        <div class="form-group">
-            <label>¿Es solicitado?</label>
-            <select name="EsSolicitado" class="form-control">
-                <option value="true">Sí</option>
-                <option value="false">No</option>
-            </select>
+        <div class="card-body">
+            @foreach (var tarea in Model.Tareas)
+            {
+                <div class="mb-3">
+                    <p>
+                        <strong>Estado actual:</strong>
+                        <span class="badge
+                            @(tarea.Estado == "pendiente" ? "bg-warning text-dark" :
+                            tarea.Estado == "en_proceso" ? "bg-info text-dark" :
+                            tarea.Estado == "completado" ? "bg-success" :
+                            tarea.Estado == "cancelado" ? "bg-danger" : "bg-secondary")">
+                            @tarea.Estado
+                        </span>
+                    </p>
+                    <form asp-action="CambiarEstadoTarea" asp-controller="Dashboard" method="post" class="d-flex align-items-center gap-2">
+                        <input type="hidden" name="idTarea" value="@tarea.IdTarea" />
+                        <select name="nuevoEstado" class="form-select w-auto">
+                            @Html.Raw($"<option value='pendiente' {(tarea.Estado == "pendiente" ? "selected" : "")}>Pendiente</option>")
+                            @Html.Raw($"<option value='en_proceso' {(tarea.Estado == "en_proceso" ? "selected" : "")}>En proceso</option>")
+                            @Html.Raw($"<option value='completado' {(tarea.Estado == "completado" ? "selected" : "")}>Completado</option>")
+                            @Html.Raw($"<option value='cancelado' {(tarea.Estado == "cancelado" ? "selected" : "")}>Cancelado</option>")
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">Actualizar estado</button>
+                    </form>
+                </div>
+            }
         </div>
+    </div>
+}
+</div>   
 
-        <button type="submit" class="btn btn-primary mt-2">Solicitar Material</button>
-    </form>
-</div>
-
-<!-- FORMULARIO PARA REGISTRAR HERRAMIENTA -->
-<div class="collapse" id="formHerramientas">
-    <form asp-action="RegistrarHerramienta" asp-controller="Dashboard" method="post">
-        <input type="hidden" name="IdDocumento" value="@Model.IdDocumento" />
-        
-        <div class="form-group">
-            <label>Nombre de herramienta dejada (opcional)</label>
-            <input type="text" name="NombreHerramientaDejada" class="form-control" />
-        </div>
-
-        <div class="form-group">
-            <label>Ubicación donde se dejó (opcional)</label>
-            <input type="text" name="UbicacionDejado" class="form-control" />
-        </div>
-
-        <!-- EsSolicitado false por defecto ya que esto es para herramienta -->
-        <input type="hidden" name="EsSolicitado" value="false" />
-
-        <!-- Material genérico ya que no aplica -->
-        <input type="hidden" name="NombreMaterial" value="(No aplica)" />
-
-        <button type="submit" class="btn btn-warning mt-2">Registrar Herramienta</button>
-    </form>
-</div>
-
+@* Mostrar PDF y cotización solo si el usuario NO es técnico *@
 @if (Context.Session.GetInt32("Rol") != 2) // Solo si NO es técnico
 {
     <div class="row">
