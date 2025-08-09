@@ -1,5 +1,7 @@
 ﻿@model Organizacional.Models.Documento
 @using System.Text.Json
+@using System.Security.Claims
+
 @{
     ViewData["Title"] = "Detalle del Pendiente";
     Layout = "_Layout";
@@ -232,27 +234,37 @@
         }
 
         <h4 class="mt-4">🧰 Herramientas dejadas en sitio</h4>
-        @if (Model.MaterialesPendientes != null && Model.MaterialesPendientes.Any(m => !m.EsSolicitado && !string.IsNullOrEmpty(m.NombreHerramientaDejada)))
+        @if (Model.HerramientaRecogida != null && Model.HerramientaRecogida.Any())
         {
+        <form asp-action="ActualizarRecogidaHerramientas" method="post">
+            <input type="hidden" name="idDocumento" value="@Model.IdDocumento" />
             <table class="table table-bordered">
                 <thead>
                     <tr>
                         <th>Herramienta</th>
                         <th>Ubicación</th>
                         <th>Fecha</th>
+                        <th>Dejada por</th>
+                        <th>Recogida</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var h in Model.MaterialesPendientes.Where(m => !m.EsSolicitado && !string.IsNullOrEmpty(m.NombreHerramientaDejada)))
+                    @foreach (var h in Model.HerramientaRecogida)
                     {
                         <tr>
-                            <td>@h.NombreHerramientaDejada</td>
+                            <td>@h.NombreHerramienta</td>
                             <td>@h.UbicacionDejado</td>
                             <td>@h.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@h.IdUsuarioNavigation?.Nombre</td>
+                            <td>
+                                <input type="checkbox" name="herramientasRecogidas" value="@h.Id" @(h.Recogida ? "checked disabled" : "") />
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
+            <button type="submit"class="btn btn-success mt-2">Actualizar</button>
+        </form>
         }
         else
         {
@@ -289,19 +301,21 @@
 
             <!-- FORMULARIO PARA REGISTRAR HERRAMIENTA -->
             <div class="collapse" id="formHerramientas">
-                <form asp-action="RegistrarHerramienta" asp-controller="Dashboard" method="post">
+                <form asp-action="RegistrarHerramienta" method="post">
                     <input type="hidden" name="IdDocumento" value="@Model.IdDocumento" />
-                    <div class="mb-2">
-                        <label>Nombre de herramienta</label>
-                        <input type="text" name="NombreHerramientaDejada" class="form-control" />
+                    <input type="hidden" name="IdUsuario" value="@User.FindFirstValue(ClaimTypes.NameIdentifier)" />
+
+                    <div class="form-group">
+                        <label>Nombre de la herramienta</label>
+                        <input type="text" name="NombreHerramienta" class="form-control" required />
                     </div>
-                    <div class="mb-2">
+
+                    <div class="form-group">
                         <label>Ubicación donde se dejó</label>
                         <input type="text" name="UbicacionDejado" class="form-control" />
                     </div>
-                    <input type="hidden" name="EsSolicitado" value="false" />
-                    <input type="hidden" name="NombreMaterial" value="(No aplica)" />
-                    <button type="submit" class="btn btn-warning mt-2">Registrar Herramienta</button>
+
+                    <button type="submit" class="btn btn-primary mt-2">Registrar herramienta</button>
                 </form>
             </div>
     </div>

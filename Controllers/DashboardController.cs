@@ -5,6 +5,7 @@ using Organizacional.Data;
 using Organizacional.Models;
 using Organizacional.Models.ViewModels;
 using System.Text.Json;
+using System.Diagnostics;
 
 namespace Organizacional.Controllers
 {
@@ -342,6 +343,8 @@ namespace Organizacional.Controllers
             var documento = await _context.Documentos
                 .Include(d => d.IdUsuarioSubioNavigation)
                 .Include(d => d.MaterialesPendientes)
+                .Include(d => d.HerramientaRecogida)
+                    .ThenInclude(h => h.IdUsuarioNavigation)
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
                 .Include(d => d.Tareas)
@@ -355,7 +358,7 @@ namespace Organizacional.Controllers
             return View(documento);
         }
 
-        // POST: Solicitar Materiales         // POST: Registrar herramienta en sitio
+        // POST: Solicitar Materiales         
         [HttpPost]
         public async Task<IActionResult> RegistrarMaterial(MaterialesPendiente material)
         {
@@ -367,12 +370,15 @@ namespace Organizacional.Controllers
             return RedirectToAction("Detalle", new { id = material.IdDocumento });
         }
 
+        // POST: Registrar herramienta en sitio
         [HttpPost]
-        public async Task<IActionResult> RegistrarHerramienta(MaterialesPendiente herramienta)
+        public async Task<IActionResult> RegistrarHerramienta(HerramientaRecogida herramienta)
         {
-            // lógica para herramientas dejadas
             herramienta.FechaRegistro = DateTime.Now;
-            _context.MaterialesPendientes.Add(herramienta);
+            herramienta.UbicacionDejado = string.IsNullOrEmpty(herramienta.UbicacionDejado) ? "No especificada" : herramienta.UbicacionDejado;
+            herramienta.NombreHerramienta = string.IsNullOrEmpty(herramienta.NombreHerramienta) ? "Sin nombre" : herramienta.NombreHerramienta;
+            herramienta.IdUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+            _context.HerramientaRecogida.Add(herramienta);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Detalle", new { id = herramienta.IdDocumento });
@@ -390,6 +396,26 @@ namespace Organizacional.Controllers
                 foreach (var material in materiales)
                 {
                     material.MaterialEntregado = true;
+                }
+
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction("Detalle", new { id = idDocumento });
+        }
+
+        [HttpPost]
+        public IActionResult ActualizarRecogidaHerramientas(int idDocumento, int[] herramientasRecogidas)
+        {
+            if (herramientasRecogidas != null && herramientasRecogidas.Length > 0)
+            {
+                var herramientas = _context.HerramientaRecogida
+                    .Where(h => h.IdDocumento == idDocumento && herramientasRecogidas.Contains(h.Id))
+                    .ToList();
+
+                foreach (var herramienta in herramientas)
+                {
+                    herramienta.Recogida = true;
                 }
 
                 _context.SaveChanges();

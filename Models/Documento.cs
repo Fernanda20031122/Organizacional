@@ -43,6 +43,7 @@ public partial class Documento
     public virtual ICollection<Historial> Historials { get; set; } = new List<Historial>();
 
     public virtual Usuario? IdUsuarioSubioNavigation { get; set; }
+    public virtual ICollection<HerramientaRecogida> HerramientaRecogida { get; set; }
     
     public ICollection<MaterialesPendiente> MaterialesPendientes { get; set; }
     public virtual ICollection<Mantenimiento> Mantenimientos { get; set; } = new List<Mantenimiento>();
