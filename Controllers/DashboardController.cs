@@ -17,25 +17,15 @@ namespace Organizacional.Controllers
         {
             _context = context;
         }
-
         public async Task<IActionResult> Index()
         {
             var idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
             var rol = HttpContext.Session.GetInt32("Rol");
-            if (idUsuario == null || rol == null)
+
+            if (idUsuario == 0 || rol == null)
             {
-                // Si la sesión expiró o no existe, redirige al login
                 return RedirectToAction("Login", "Auth");
             }
-            
-            ViewBag.Notificaciones = await _context.Notificaciones
-                .Where(n => n.IdUsuario == idUsuario)
-                .OrderByDescending(n => n.Fecha)
-                .Take(5)
-                .ToListAsync();
-
-            ViewBag.NotificacionesNoLeidas = await _context.Notificaciones
-                .CountAsync(n => n.IdUsuario == idUsuario && n.Leida != true);
 
             var documentos = await _context.Documentos
                 .Include(d => d.IdUsuarioSubioNavigation)
@@ -84,7 +74,6 @@ namespace Organizacional.Controllers
 
                 ColaboradorAsignado = d.Tareas.FirstOrDefault(t => t.IdColaboradorAsignadoNavigation != null)?.IdColaboradorAsignadoNavigation?.Nombre ?? "No asignado",
 
-                // Estos los usas para mostrar viñetas o íconos en la vista
                 Suministro = d.Suministro ?? false,
                 Instalacion = d.Instalacion ?? false,
                 Mantenimiento = d.Mantenimiento ?? false,
@@ -92,106 +81,14 @@ namespace Organizacional.Controllers
 
             }).ToList();
 
-            // ALERTAS AUTOMÁTICAS
-            if (idUsuario == 0 || !await _context.Usuarios.AnyAsync(u => u.IdUsuario == idUsuario))
-            {
-                // No crear notificaciones si el usuario no está autenticado o no existe
-                return View(modelo);
-            }
-            var notificaciones = new List<Notificacione>();
+            // Ordenar: contratos primero (por mayor progreso), luego órdenes (por más días transcurridos)
+            modelo = modelo
+                .OrderBy(d => d.Tipo != "Contrato") // contratos primero
+                .ThenByDescending(d => d.Tipo == "Contrato" ? d.PorcentajeProgreso : 0) // contratos por progreso
+                .ThenByDescending(d => d.Tipo != "Contrato" ? d.DiasTranscurridos : 0) // órdenes por días transcurridos
+                .ToList();
 
-            foreach (var doc in documentos)
-            {
-                if (doc.TipoDocumento == "Contrato" && doc.FechaFin.HasValue)
-                {
-                    var diasRestantes = (doc.FechaFin.Value.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
-                    if (diasRestantes <= 5 && diasRestantes >= 0)
-                    {
-                        notificaciones.Add(new Notificacione
-                        {
-                            IdUsuario = idUsuario,
-                            Mensaje = $"El contrato '{doc.NumeroDocumento}' vence en {diasRestantes} días.",
-                            Leida = false,
-                            Fecha = DateTime.Now
-                        });
-                    }
-                }
-            }
-
-            var mantenimientos = await _context.Mantenimientos.Include(m => m.IdDocumentoNavigation).ToListAsync();
-            foreach (var m in mantenimientos)
-            {
-                if (m.ProximoMantenimiento.HasValue)
-                {
-                    var dias = (m.ProximoMantenimiento.Value.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
-                    if (dias < 0)
-                    {
-                        notificaciones.Add(new Notificacione
-                        {
-                            IdUsuario = idUsuario,
-                            Mensaje = $"El mantenimiento del documento '{m.IdDocumentoNavigation?.NumeroDocumento ?? "Desconocido"}' está vencido.",
-                            Leida = false,
-                            Fecha = DateTime.Now
-                        });
-                    }
-                    else if (dias <= 3)
-                    {
-                        notificaciones.Add(new Notificacione
-                        {
-                            IdUsuario = idUsuario,
-                            Mensaje = $"El mantenimiento del documento '{m.IdDocumentoNavigation?.NumeroDocumento ?? "Desconocido"}' será en {dias} días.",
-                            Leida = false,
-                            Fecha = DateTime.Now
-                        });
-                    }
-                }
-            }
-
-            if (notificaciones.Any())
-            {
-                _context.Notificaciones.AddRange(notificaciones);
-                await _context.SaveChangesAsync();
-            }
             return View(modelo);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> MarcarNotificacionesLeidas()
-        {
-            var idUsuario = HttpContext.Session.GetInt32("IdUsuario");
-            if (idUsuario == null)
-                return Unauthorized();
-
-            var noLeidas = await _context.Notificaciones
-                .Where(n => n.IdUsuario == idUsuario && n.Leida == false)
-                .ToListAsync();
-
-            foreach (var n in noLeidas)
-                n.Leida = true;
-
-            await _context.SaveChangesAsync();
-
-            return Ok();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> MarcarNotificacionesComoLeidas()
-        {
-            var idUsuario = HttpContext.Session.GetInt32("IdUsuario");
-            if (idUsuario == null)
-                return Unauthorized();
-
-            var notificaciones = await _context.Notificaciones
-                .Where(n => n.IdUsuario == idUsuario && n.Leida == false)
-                .ToListAsync();
-
-            foreach (var n in notificaciones)
-            {
-                n.Leida = true;
-            }
-
-            await _context.SaveChangesAsync();
-            return Ok(); // Se puede usar para llamadas AJAX
         }
 
         [HttpGet]
@@ -358,28 +255,101 @@ namespace Organizacional.Controllers
             return View(documento);
         }
 
-        // POST: Solicitar Materiales         
+        // POST: Solicitar Materiales
         [HttpPost]
-        public async Task<IActionResult> RegistrarMaterial(MaterialesPendiente material)
+        public async Task<IActionResult> RegistrarMaterial(int IdDocumento, string NombreMaterial, bool EsSolicitado = true)
         {
-            // lógica para materiales solicitados
-            material.FechaRegistro = DateTime.Now;
-            _context.MaterialesPendientes.Add(material);
+            if (IdDocumento <= 0)
+            {
+                TempData["Error"] = "Documento no válido.";
+                return RedirectToAction("Detalle", new { id = IdDocumento });
+            }
+
+            if (string.IsNullOrWhiteSpace(NombreMaterial))
+            {
+                TempData["Error"] = "Ingrese al menos un material.";
+                return RedirectToAction("Detalle", new { id = IdDocumento });
+            }
+
+            // Separadores: coma, punto y coma o salto de línea (acepta ambos formatos)
+            var separadores = new[] { ',', ';', '\n', '\r' };
+            var nombres = NombreMaterial
+                .Split(separadores, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+
+            if (!nombres.Any())
+            {
+                TempData["Error"] = "No se encontraron materiales válidos.";
+                return RedirectToAction("Detalle", new { id = IdDocumento });
+            }
+
+            var ahora = DateTime.Now;
+            var lista = new List<MaterialesPendiente>();
+
+            foreach (var n in nombres)
+            {
+                var m = new MaterialesPendiente
+                {
+                    IdDocumento = IdDocumento,      
+                    NombreMaterial = n,
+                    EsSolicitado = EsSolicitado,
+                    FechaRegistro = ahora
+                };
+
+                // tiene MaterialEntregado, inicialízalo en false:
+                // m.MaterialEntregado = false;
+
+                lista.Add(m);
+            }
+
+            _context.MaterialesPendientes.AddRange(lista);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction("Detalle", new { id = material.IdDocumento });
+            TempData["Mensaje"] = $"Se registraron {lista.Count} material(es).";
+            return RedirectToAction("Detalle", new { id = IdDocumento });
         }
 
         // POST: Registrar herramienta en sitio
         [HttpPost]
         public async Task<IActionResult> RegistrarHerramienta(HerramientaRecogida herramienta)
         {
-            herramienta.FechaRegistro = DateTime.Now;
-            herramienta.UbicacionDejado = string.IsNullOrEmpty(herramienta.UbicacionDejado) ? "No especificada" : herramienta.UbicacionDejado;
-            herramienta.NombreHerramienta = string.IsNullOrEmpty(herramienta.NombreHerramienta) ? "Sin nombre" : herramienta.NombreHerramienta;
-            herramienta.IdUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
-            _context.HerramientaRecogida.Add(herramienta);
-            await _context.SaveChangesAsync();
+            if (!string.IsNullOrWhiteSpace(herramienta.NombreHerramienta))
+            {
+                // Obtenemos el ID del usuario logueado
+                int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
+
+                if (idUsuario == null || idUsuario <= 0)
+                {
+                    TempData["Error"] = "No se pudo identificar al usuario. Inicie sesión nuevamente.";
+                    return RedirectToAction("Login", "Auth");
+                }
+
+                var items = herramienta.NombreHerramienta
+                    .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .ToList();
+
+                foreach (var item in items)
+                {
+                    var nuevaHerramienta = new HerramientaRecogida
+                    {
+                        IdDocumento = herramienta.IdDocumento,
+                        NombreHerramienta = item,
+                        UbicacionDejado = string.IsNullOrEmpty(herramienta.UbicacionDejado) 
+                            ? "No especificada" 
+                            : herramienta.UbicacionDejado,
+                        IdUsuario = idUsuario.Value, 
+                        FechaRegistro = DateTime.Now
+                    };
+
+                    _context.HerramientaRecogida.Add(nuevaHerramienta);
+                }
+
+                await _context.SaveChangesAsync();
+            }
 
             return RedirectToAction("Detalle", new { id = herramienta.IdDocumento });
         }
