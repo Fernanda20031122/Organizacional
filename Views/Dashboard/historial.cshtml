@@ -144,16 +144,7 @@
                                             <span class="badge bg-primary ms-1">Asignado a ti</span>
                                         }
                                 </td>
-                                <td>
-                                    @if (item.FechaCierre.HasValue)
-                                    {
-                                        @item.FechaCierre.Value.ToString("dd/MM/yyyy")
-                                    }
-                                    else
-                                    {
-                                        <text>No registrada</text>
-                                    }
-                                </td>
+                                <td>@(item.FechaCierre == DateTime.MinValue ? "No registrada" : item.FechaCierre.ToString("dd/MM/yyyy"))</td>
                                 <td>
                                         <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-success btn-sm mt-2">Ver Detalle</a>
                                 </td>
