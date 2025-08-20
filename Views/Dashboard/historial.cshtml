@@ -33,6 +33,8 @@
                     <a asp-controller="Usuarios" asp-action="CrearAdministrador"><i class="bi bi-person-gear me-2"></i>Crear Admin</a>
                     <a asp-controller="Usuarios" asp-action="Index"><i class="bi bi-people me-2"></i>Lista de Usuarios</a>
                     <a asp-controller="Dashboard" asp-action="Historial"><i class="bi bi-archive me-2"></i>Historial</a>
+                    <a asp-controller="Dashboard" asp-action="MaterialesPorEntregar"><i class="bi bi-box-seam me-2"></i>Materiales por Entregar</a>
+                    <a asp-controller="Dashboard" asp-action="HerramientasPorRecoger"><i class="bi bi-tools me-2"></i>Herramientas por Recoger</a>
                 </div>
 
                 <div class="logout-section">
@@ -83,6 +85,7 @@
                             <th>Subido por</th>
                             <th>Fecha subida</th>
                             <th>Técnico Asignado</th>
+                            <th>Fecha Cierre</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -140,6 +143,16 @@
                                         {
                                             <span class="badge bg-primary ms-1">Asignado a ti</span>
                                         }
+                                </td>
+                                <td>
+                                    @if (item.FechaCierre.HasValue)
+                                    {
+                                        @item.FechaCierre.Value.ToString("dd/MM/yyyy")
+                                    }
+                                    else
+                                    {
+                                        <text>No registrada</text>
+                                    }
                                 </td>
                                 <td>
                                         <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-success btn-sm mt-2">Ver Detalle</a>
