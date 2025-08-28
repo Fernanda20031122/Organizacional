@@ -17,7 +17,7 @@ namespace Organizacional.Controllers
         {
             _context = context;
         }
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index() // Vista de Dashboard Principal
         {
             var idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
             var rol = HttpContext.Session.GetInt32("Rol");
@@ -92,7 +92,7 @@ namespace Organizacional.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Crear()
+        public async Task<IActionResult> Crear() 
         {
             var tecnicos = await _context.Usuarios
                 .Where(u => u.IdRol == 2 && u.Estado == "activo")
@@ -110,7 +110,7 @@ namespace Organizacional.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Crear(DocumentoFormViewModel modelo)
+        public async Task<IActionResult> Crear(DocumentoFormViewModel modelo) // Vista de Subir Pendiente
         {
             // Validar tipo de documento
             if (string.IsNullOrEmpty(modelo.TipoDocumento) ||
@@ -234,8 +234,8 @@ namespace Organizacional.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Vista de detalle del documento
-        public async Task<IActionResult> Detalle(int id)
+        
+        public async Task<IActionResult> Detalle(int id) // Vista Detalle del Pendiente
         {
             var documento = await _context.Documentos
                 .Include(d => d.IdUsuarioSubioNavigation)
@@ -255,147 +255,8 @@ namespace Organizacional.Controllers
             return View(documento);
         }
 
-        // POST: Solicitar Materiales
         [HttpPost]
-        public async Task<IActionResult> RegistrarMaterial(int IdDocumento, string NombreMaterial, bool EsSolicitado = true)
-        {
-            if (IdDocumento <= 0)
-            {
-                TempData["Error"] = "Documento no válido.";
-                return RedirectToAction("Detalle", new { id = IdDocumento });
-            }
-
-            if (string.IsNullOrWhiteSpace(NombreMaterial))
-            {
-                TempData["Error"] = "Ingrese al menos un material.";
-                return RedirectToAction("Detalle", new { id = IdDocumento });
-            }
-
-            // Separadores: coma, punto y coma o salto de línea (acepta ambos formatos)
-            var separadores = new[] { ',', ';', '\n', '\r' };
-            var nombres = NombreMaterial
-                .Split(separadores, StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => x.Trim())
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .ToList();
-
-            if (!nombres.Any())
-            {
-                TempData["Error"] = "No se encontraron materiales válidos.";
-                return RedirectToAction("Detalle", new { id = IdDocumento });
-            }
-
-            var ahora = DateTime.Now;
-            var lista = new List<MaterialesPendiente>();
-
-            foreach (var n in nombres)
-            {
-                var m = new MaterialesPendiente
-                {
-                    IdDocumento = IdDocumento,      
-                    NombreMaterial = n,
-                    EsSolicitado = EsSolicitado,
-                    FechaRegistro = ahora
-                };
-
-                // tiene MaterialEntregado, inicialízalo en false:
-                // m.MaterialEntregado = false;
-
-                lista.Add(m);
-            }
-
-            _context.MaterialesPendientes.AddRange(lista);
-            await _context.SaveChangesAsync();
-
-            TempData["Mensaje"] = $"Se registraron {lista.Count} material(es).";
-            return RedirectToAction("Detalle", new { id = IdDocumento });
-        }
-
-        // POST: Registrar herramienta en sitio
-        [HttpPost]
-        public async Task<IActionResult> RegistrarHerramienta(HerramientaRecogida herramienta)
-        {
-            if (!string.IsNullOrWhiteSpace(herramienta.NombreHerramienta))
-            {
-                // Obtenemos el ID del usuario logueado
-                int? idUsuario = HttpContext.Session.GetInt32("IdUsuario");
-
-                if (idUsuario == null || idUsuario <= 0)
-                {
-                    TempData["Error"] = "No se pudo identificar al usuario. Inicie sesión nuevamente.";
-                    return RedirectToAction("Login", "Auth");
-                }
-
-                var items = herramienta.NombreHerramienta
-                    .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(x => x.Trim())
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .ToList();
-
-                foreach (var item in items)
-                {
-                    var nuevaHerramienta = new HerramientaRecogida
-                    {
-                        IdDocumento = herramienta.IdDocumento,
-                        NombreHerramienta = item,
-                        UbicacionDejado = string.IsNullOrEmpty(herramienta.UbicacionDejado) 
-                            ? "No especificada" 
-                            : herramienta.UbicacionDejado,
-                        IdUsuario = idUsuario.Value, 
-                        FechaRegistro = DateTime.Now
-                    };
-
-                    _context.HerramientaRecogida.Add(nuevaHerramienta);
-                }
-
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction("Detalle", new { id = herramienta.IdDocumento });
-        }
-
-        [HttpPost]
-        public IActionResult ActualizarEntregaMateriales(int idDocumento, int[] materialesEntregados)
-        {
-            if (materialesEntregados != null && materialesEntregados.Length > 0)
-            {
-                var materiales = _context.MaterialesPendientes
-                    .Where(m => m.IdDocumento == idDocumento && materialesEntregados.Contains(m.Id))
-                    .ToList();
-
-                foreach (var material in materiales)
-                {
-                    material.MaterialEntregado = true;
-                }
-
-                _context.SaveChanges();
-            }
-
-            return RedirectToAction("Detalle", new { id = idDocumento });
-        }
-
-        [HttpPost]
-        public IActionResult ActualizarRecogidaHerramientas(int idDocumento, int[] herramientasRecogidas)
-        {
-            if (herramientasRecogidas != null && herramientasRecogidas.Length > 0)
-            {
-                var herramientas = _context.HerramientaRecogida
-                    .Where(h => h.IdDocumento == idDocumento && herramientasRecogidas.Contains(h.Id))
-                    .ToList();
-
-                foreach (var herramienta in herramientas)
-                {
-                    herramienta.Recogida = true;
-                }
-
-                _context.SaveChanges();
-            }
-
-            return RedirectToAction("Detalle", new { id = idDocumento });
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> CambiarEstadoTarea(int idTarea, string nuevoEstado)
+        public async Task<IActionResult> CambiarEstadoTarea(int idTarea, string nuevoEstado) // Cambiar el estado del pendiente
         {
             var tarea = await _context.Tareas
                 .Include(t => t.IdDocumentoNavigation)
@@ -404,7 +265,16 @@ namespace Organizacional.Controllers
             if (tarea == null)
                 return NotFound();
 
+            // Cambiar estado de la tarea
             tarea.Estado = nuevoEstado;
+
+            // ✅ Si el estado es "Cancelado" o "Completado", guardamos la fecha de cierre en el documento
+            if (nuevoEstado.Equals("Cancelado", StringComparison.OrdinalIgnoreCase) ||
+                nuevoEstado.Equals("Completado", StringComparison.OrdinalIgnoreCase))
+            {
+                tarea.IdDocumentoNavigation.FechaCierre = DateTime.Now;
+            }
+
             await _context.SaveChangesAsync();
 
             // Crear notificación para el técnico (si tiene uno asignado)
@@ -448,20 +318,34 @@ namespace Organizacional.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AsignarTecnico(int idDocumento, int idTecnico)
+        public async Task<IActionResult> AsignarTecnico(int idDocumento, int idTecnico) // Asignar Tecnico
         {
             var documento = await _context.Documentos.FindAsync(idDocumento);
             if (documento == null)
                 return NotFound();
 
-            var tarea = new Tarea
-            {
-                IdDocumento = idDocumento,
-                IdTecnicoAsignado = idTecnico,
-                Completada = false
-            };
+            // Buscar si ya existe una tarea asociada al documento
+            var tarea = await _context.Tareas
+                .FirstOrDefaultAsync(t => t.IdDocumento == idDocumento);
 
-            _context.Tareas.Add(tarea);
+            if (tarea != null)
+            {
+                // ✅ Actualizar tarea existente
+                tarea.IdTecnicoAsignado = idTecnico;
+                _context.Tareas.Update(tarea);
+            }
+            else
+            {
+                // ⚠️ Solo si no existe, creamos una nueva
+                tarea = new Tarea
+                {
+                    IdDocumento = idDocumento,
+                    IdTecnicoAsignado = idTecnico,
+                    Completada = false
+                };
+                _context.Tareas.Add(tarea);
+            }
+
             await _context.SaveChangesAsync();
 
             // Crear notificación para el técnico
@@ -478,8 +362,10 @@ namespace Organizacional.Controllers
                 _context.Notificaciones.Add(notificacion);
                 await _context.SaveChangesAsync();
             }
+
             return RedirectToAction(nameof(Detalle), new { id = idDocumento });
         }
+
         [HttpGet]
         public async Task<IActionResult> AsignarColaborador(int id)
         {
@@ -503,7 +389,7 @@ namespace Organizacional.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AsignarColaborador(int idDocumento, int idColaborador)
+        public async Task<IActionResult> AsignarColaborador(int idDocumento, int idColaborador) // Asignar Colaborador
         {
             var documento = await _context.Documentos
                 .Include(d => d.Tareas)
@@ -537,7 +423,7 @@ namespace Organizacional.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> RegistrarMantenimientoPost(int id, DateTime? proxima)
+        public async Task<IActionResult> RegistrarMantenimientoPost(int id, DateTime? proxima) // Fechas de los Mantenimientos
         {
             var mantenimiento = await _context.Mantenimientos.FindAsync(id);
             if (mantenimiento == null) return NotFound();
@@ -588,7 +474,7 @@ namespace Organizacional.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ActualizarProximoMantenimiento(int id, DateOnly? nuevaFecha)
+        public async Task<IActionResult> ActualizarProximoMantenimiento(int id, DateOnly? nuevaFecha) // Proxima Fecha
         {
             var mantenimiento = await _context.Mantenimientos.FindAsync(id);
             if (mantenimiento == null)
@@ -620,9 +506,11 @@ namespace Organizacional.Controllers
                 NumeroDocumento = d.NumeroDocumento ?? "Sin número",
                 SubidoPor = d.IdUsuarioSubioNavigation?.Nombre ?? "Desconocido",
                 FechaSubida = d.FechaSubida?.ToDateTime(TimeOnly.MinValue) ?? DateTime.MinValue,
+                FechaCierre = d.FechaCierre,
                 Suministro = d.Suministro ?? false,
                 Instalacion = d.Instalacion ?? false,
                 Mantenimiento = d.Mantenimiento ?? false,
+                Soporte = d.Soporte ?? false,
                 TecnicoAsignado = d.Tareas.FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado",
                 EmpresaDestino = d.EmpresaDestino ?? "Sin empresa"
             }).ToList();

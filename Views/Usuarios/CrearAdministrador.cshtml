@@ -4,29 +4,42 @@
     ViewData["Title"] = "Crear Administrador";
     Layout = "_Layout";
 }
+@{
+    var idUsuario = Context.Session.GetInt32("IdUsuario");
+    var rolUsuario = Context.Session.GetInt32("Rol");
+}
 
-<h2>@ViewData["Title"]</h2>
+@if (idUsuario == null || rolUsuario == null)
+{
+    <script>window.location.href = '/Auth/Login';</script>
+}
 
-<form asp-action="CrearAdministrador" method="post">
-    @Html.AntiForgeryToken()
+@await Html.PartialAsync("_Sidebar")
 
-    <div class="mb-3">
-        <label asp-for="Nombre" class="form-label"></label>
-        <input asp-for="Nombre" class="form-control" />
-        <span asp-validation-for="Nombre" class="text-danger"></span>
-    </div>
+<div class="col-md-9 col-lg-10 p-4 contenido" style="margin-left: 240px;">
+    <h2>@ViewData["Title"]</h2>
 
-    <div class="mb-3">
-        <label asp-for="Correo" class="form-label"></label>
-        <input asp-for="Correo" class="form-control" type="email" />
-        <span asp-validation-for="Correo" class="text-danger"></span>
-    </div>
+    <form asp-action="CrearAdministrador" method="post" class="card p-4 shadow-sm">
+        @Html.AntiForgeryToken()
 
-    <div class="mb-3">
-        <label asp-for="Contrasena" class="form-label"></label>
-        <input asp-for="Contrasena" class="form-control" type="password" />
-        <span asp-validation-for="Contrasena" class="text-danger"></span>
-    </div>
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label"></label>
+            <input asp-for="Nombre" class="form-control" />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
 
-    <button type="submit" class="btn btn-primary">Crear Administrador</button>
-</form>
+        <div class="mb-3">
+            <label asp-for="Correo" class="form-label"></label>
+            <input asp-for="Correo" class="form-control" type="email" />
+            <span asp-validation-for="Correo" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Contrasena" class="form-label"></label>
+            <input asp-for="Contrasena" class="form-control" type="password" />
+            <span asp-validation-for="Contrasena" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Crear Administrador</button>
+    </form>
+</div>

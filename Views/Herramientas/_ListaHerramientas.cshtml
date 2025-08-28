@@ -1,0 +1,43 @@
+@model List<Organizacional.Models.HerramientaRecogida>
+
+<div class="modal fade" id="modalListaHerramientas" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Herramientas por recoger</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form method="post" asp-controller="Herramientas" asp-action="ActualizarRecogidaHerramientas">
+          <input type="hidden" name="idDocumento" value="@Model.FirstOrDefault()?.IdDocumento" />
+
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Recogida</th>
+                <th>Herramienta</th>
+                <th>Ubicación</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach (var h in Model)
+              {
+                  <tr>
+                      <td>
+                          <input type="checkbox" name="herramientasRecogidas" value="@h.Id" @(h.Recogida ? "checked" : "") />
+                      </td>
+                      <td>@h.NombreHerramienta</td>
+                      <td>@h.UbicacionDejado</td>
+                  </tr>
+              }
+            </tbody>
+          </table>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

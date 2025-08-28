@@ -201,7 +201,7 @@
         <h4 class="mt-4">🧾 Materiales solicitados</h4>
         @if (Model.MaterialesPendientes != null && Model.MaterialesPendientes.Any(m => m.EsSolicitado))
         {
-            <form method="post" asp-action="ActualizarEntregaMateriales">
+            <form method="post" asp-action="ActualizarEntregaMateriales" asp-controller="Materiales" method="post">
                 <input type="hidden" name="idDocumento" value="@Model.IdDocumento" />
                 <table class="table table-bordered">
                     <thead>
@@ -216,7 +216,7 @@
                         {
                             <tr>
                                 <td>@m.NombreMaterial</td>
-                                <td>@m.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@m.FechaRegistro?.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>
                                     <input type="checkbox" name="materialesEntregados" value="@m.Id" @(m.MaterialEntregado ? "checked disabled" : "") />
                                 </td>
@@ -236,7 +236,7 @@
         <h4 class="mt-4">🧰 Herramientas dejadas en sitio</h4>
         @if (Model.HerramientaRecogida != null && Model.HerramientaRecogida.Any())
         {
-        <form asp-action="ActualizarRecogidaHerramientas" method="post">
+        <form asp-action="ActualizarRecogidaHerramientas" asp-controller="Herramientas" method="post">
             <input type="hidden" name="idDocumento" value="@Model.IdDocumento" />
             <table class="table table-bordered">
                 <thead>
@@ -282,7 +282,7 @@
 
             <!-- FORMULARIO PARA SOLICITAR MATERIALES -->
             <div class="collapse" id="formMateriales">
-                <form asp-action="RegistrarMaterial" asp-controller="Dashboard" method="post">
+                <form asp-action="RegistrarMaterial" asp-controller="Materiales" method="post">
                     <input type="hidden" name="IdDocumento" value="@Model.IdDocumento" />
                     <div class="mb-2">
                         <label>Nombre del material</label>
@@ -301,7 +301,7 @@
 
             <!-- FORMULARIO PARA REGISTRAR HERRAMIENTA -->
             <div class="collapse" id="formHerramientas">
-                <form asp-action="RegistrarHerramienta" method="post">
+                <form asp-action="RegistrarHerramienta"asp-controller="Herramientas" method="post">
                     <input type="hidden" name="IdDocumento" value="@Model.IdDocumento" />
                     <input type="hidden" name="IdUsuario" value="@User.FindFirstValue(ClaimTypes.NameIdentifier)" />
 

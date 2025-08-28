@@ -28,6 +28,9 @@ namespace Organizacional.Models
 
         [Column("FechaRegistro")]
         public DateTime FechaRegistro { get; set; }
+
+        [Column("FechaRecogida")]
+        public DateTime? FechaRecogida { get; set; }
         public bool Recogida { get; set; }
 
         // Relaciones

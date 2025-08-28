@@ -16,6 +16,7 @@ public partial class Documento
     public DateOnly? FechaGeneracion { get; set; }
 
     public DateOnly? FechaSubida { get; set; }
+    public DateTime? FechaCierre { get; set; }
 
     public string? ArchivoUrl { get; set; }
 

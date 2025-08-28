@@ -4,25 +4,27 @@
     ViewData["Title"] = "Iniciar Sesión";
 }
 
-<h2>Iniciar Sesión</h2>
+<div class="col-md-9 col-lg-10 p-4 contenido" style="margin-left: 240px;">
+    <h2>Iniciar Sesión</h2>
 
-<form asp-action="Login" method="post">
-    <div class="mb-3">
-        <label asp-for="Correo" class="form-label">Correo</label>
-        <input asp-for="Correo" class="form-control" />
-        <span asp-validation-for="Correo" class="text-danger"></span>
-    </div>
+    <form asp-action="Login" method="post" class="card p-4 shadow-sm">
+        <div class="mb-3">
+            <label asp-for="Correo" class="form-label">Correo</label>
+            <input asp-for="Correo" class="form-control" />
+            <span asp-validation-for="Correo" class="text-danger"></span>
+        </div>
 
-    <div class="mb-3">
-        <label asp-for="Contrasena" class="form-label">Contraseña</label>
-        <input asp-for="Contrasena" class="form-control" type="password" />
-        <span asp-validation-for="Contrasena" class="text-danger"></span>
-    </div>
+        <div class="mb-3">
+            <label asp-for="Contrasena" class="form-label">Contraseña</label>
+            <input asp-for="Contrasena" class="form-control" type="password" />
+            <span asp-validation-for="Contrasena" class="text-danger"></span>
+        </div>
 
-    <button type="submit" class="btn btn-primary">Ingresar</button>
+        <button type="submit" class="btn btn-primary">Ingresar</button>
 
-</form>
-<p>
-    <a asp-controller="Auth" asp-action="OlvidoContrasena">¿Olvidaste tu contraseña?</a>
-</p>
+    </form>
+    <p>
+        <a asp-controller="Auth" asp-action="OlvidoContrasena">¿Olvidaste tu contraseña?</a>
+    </p>
+</div>
 

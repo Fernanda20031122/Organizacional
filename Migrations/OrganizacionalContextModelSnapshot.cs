@@ -24,36 +24,6 @@ namespace Organizacional.Migrations
             MySqlModelBuilderExtensions.HasCharSet(modelBuilder, "utf8mb4");
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("Organizacional.Models.Cotizacione", b =>
-                {
-                    b.Property<int>("IdCotizacion")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int(11)")
-                        .HasColumnName("id_cotizacion");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdCotizacion"));
-
-                    b.Property<string>("ArchivoUrl")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("archivo_url");
-
-                    b.Property<DateOnly?>("FechaSubida")
-                        .HasColumnType("date")
-                        .HasColumnName("fecha_subida");
-
-                    b.Property<int>("IdDocumento")
-                        .HasColumnType("int(11)")
-                        .HasColumnName("id_documento");
-
-                    b.HasKey("IdCotizacion")
-                        .HasName("PRIMARY");
-
-                    b.HasIndex(new[] { "IdDocumento" }, "id_documento");
-
-                    b.ToTable("cotizaciones", (string)null);
-                });
-
             modelBuilder.Entity("Organizacional.Models.Documento", b =>
                 {
                     b.Property<int>("IdDocumento")
@@ -74,6 +44,15 @@ namespace Organizacional.Migrations
                         .HasColumnName("asignada")
                         .HasDefaultValueSql("'0'");
 
+                    b.Property<string>("CotizacionArchivoUrl")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("cotizacion_archivo_url");
+
+                    b.Property<DateTime?>("CotizacionFecha")
+                        .HasColumnType("datetime")
+                        .HasColumnName("cotizacion_fecha");
+
                     b.Property<string>("Descripcion")
                         .HasColumnType("text")
                         .HasColumnName("descripcion");
@@ -82,6 +61,9 @@ namespace Organizacional.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)")
                         .HasColumnName("empresa_destino");
+
+                    b.Property<DateTime?>("FechaCierre")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateOnly?>("FechaFin")
                         .HasColumnType("date")
@@ -120,6 +102,9 @@ namespace Organizacional.Migrations
                         .HasColumnType("varchar(100)")
                         .HasColumnName("numero_documento");
 
+                    b.Property<bool?>("Soporte")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<bool?>("Suministro")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
@@ -137,6 +122,48 @@ namespace Organizacional.Migrations
                     b.HasIndex(new[] { "IdUsuarioSubio" }, "id_usuario_subio");
 
                     b.ToTable("documentos", (string)null);
+                });
+
+            modelBuilder.Entity("Organizacional.Models.HerramientaRecogida", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("FechaRegistro")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("FechaRegistro");
+
+                    b.Property<int>("IdDocumento")
+                        .HasColumnType("int(11)")
+                        .HasColumnName("IdDocumento");
+
+                    b.Property<int>("IdUsuario")
+                        .HasColumnType("int(11)")
+                        .HasColumnName("IdUsuario");
+
+                    b.Property<string>("NombreHerramienta")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("NombreHerramienta");
+
+                    b.Property<bool>("Recogida")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("UbicacionDejado")
+                        .HasColumnType("longtext")
+                        .HasColumnName("UbicacionDejado");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdDocumento");
+
+                    b.HasIndex("IdUsuario");
+
+                    b.ToTable("HerramientasRecogidas");
                 });
 
             modelBuilder.Entity("Organizacional.Models.Historial", b =>
@@ -169,8 +196,7 @@ namespace Organizacional.Migrations
                     b.HasKey("IdHistorial")
                         .HasName("PRIMARY");
 
-                    b.HasIndex(new[] { "IdDocumento" }, "id_documento")
-                        .HasDatabaseName("id_documento1");
+                    b.HasIndex(new[] { "IdDocumento" }, "id_documento");
 
                     b.HasIndex(new[] { "IdUsuario" }, "id_usuario");
 
@@ -187,7 +213,8 @@ namespace Organizacional.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("FechasRealizadasJson")
-                        .HasColumnType("longtext");
+                        .HasColumnType("longtext")
+                        .HasColumnName("fechas_realizadasJson");
 
                     b.Property<int?>("IdDocumento")
                         .HasColumnType("int(11)")
@@ -211,9 +238,50 @@ namespace Organizacional.Migrations
                         .HasName("PRIMARY");
 
                     b.HasIndex(new[] { "IdDocumento" }, "id_documento")
-                        .HasDatabaseName("id_documento2");
+                        .HasDatabaseName("id_documento1");
 
                     b.ToTable("mantenimientos", (string)null);
+                });
+
+            modelBuilder.Entity("Organizacional.Models.MaterialesPendiente", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("EsSolicitado")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("FechaRegistro")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("IdDocumento")
+                        .HasColumnType("int(11)")
+                        .HasColumnName("IdDocumento");
+
+                    b.Property<bool>("MaterialEntregado")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("NombreHerramientaDejada")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("NombreMaterial")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("UbicacionDejado")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdDocumento");
+
+                    b.ToTable("MaterialesPendientes");
                 });
 
             modelBuilder.Entity("Organizacional.Models.Notificacione", b =>
@@ -295,7 +363,7 @@ namespace Organizacional.Migrations
                         .HasName("PRIMARY");
 
                     b.HasIndex(new[] { "IdDocumento" }, "id_documento")
-                        .HasDatabaseName("id_documento3");
+                        .HasDatabaseName("id_documento2");
 
                     b.ToTable("sedes_documento", (string)null);
                 });
@@ -313,6 +381,7 @@ namespace Organizacional.Migrations
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Estado")
+                        .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("enum('pendiente','en_progreso','completado')")
                         .HasColumnName("estado")
@@ -326,6 +395,9 @@ namespace Organizacional.Migrations
                         .HasColumnType("date")
                         .HasColumnName("fecha_ejecucion");
 
+                    b.Property<int?>("IdColaboradorAsignado")
+                        .HasColumnType("int(11)");
+
                     b.Property<int>("IdDocumento")
                         .HasColumnType("int(11)")
                         .HasColumnName("id_documento");
@@ -337,8 +409,10 @@ namespace Organizacional.Migrations
                     b.HasKey("IdTarea")
                         .HasName("PRIMARY");
 
+                    b.HasIndex("IdColaboradorAsignado");
+
                     b.HasIndex(new[] { "IdDocumento" }, "id_documento")
-                        .HasDatabaseName("id_documento4");
+                        .HasDatabaseName("id_documento3");
 
                     b.HasIndex(new[] { "IdTecnicoAsignado" }, "id_tecnico_asignado");
 
@@ -363,6 +437,9 @@ namespace Organizacional.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)")
                         .HasColumnName("correo");
+
+                    b.Property<bool?>("DebeCambiarContrasena")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Estado")
                         .ValueGeneratedOnAdd()
@@ -393,17 +470,6 @@ namespace Organizacional.Migrations
                     b.ToTable("usuarios", (string)null);
                 });
 
-            modelBuilder.Entity("Organizacional.Models.Cotizacione", b =>
-                {
-                    b.HasOne("Organizacional.Models.Documento", "IdDocumentoNavigation")
-                        .WithMany("Cotizaciones")
-                        .HasForeignKey("IdDocumento")
-                        .IsRequired()
-                        .HasConstraintName("cotizaciones_ibfk_1");
-
-                    b.Navigation("IdDocumentoNavigation");
-                });
-
             modelBuilder.Entity("Organizacional.Models.Documento", b =>
                 {
                     b.HasOne("Organizacional.Models.Usuario", "IdUsuarioSubioNavigation")
@@ -412,6 +478,25 @@ namespace Organizacional.Migrations
                         .HasConstraintName("documentos_ibfk_1");
 
                     b.Navigation("IdUsuarioSubioNavigation");
+                });
+
+            modelBuilder.Entity("Organizacional.Models.HerramientaRecogida", b =>
+                {
+                    b.HasOne("Organizacional.Models.Documento", "Documento")
+                        .WithMany("HerramientaRecogida")
+                        .HasForeignKey("IdDocumento")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Organizacional.Models.Usuario", "IdUsuarioNavigation")
+                        .WithMany()
+                        .HasForeignKey("IdUsuario")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Documento");
+
+                    b.Navigation("IdUsuarioNavigation");
                 });
 
             modelBuilder.Entity("Organizacional.Models.Historial", b =>
@@ -443,6 +528,17 @@ namespace Organizacional.Migrations
                     b.Navigation("IdDocumentoNavigation");
                 });
 
+            modelBuilder.Entity("Organizacional.Models.MaterialesPendiente", b =>
+                {
+                    b.HasOne("Organizacional.Models.Documento", "Documento")
+                        .WithMany("MaterialesPendientes")
+                        .HasForeignKey("IdDocumento")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Documento");
+                });
+
             modelBuilder.Entity("Organizacional.Models.Notificacione", b =>
                 {
                     b.HasOne("Organizacional.Models.Usuario", "IdUsuarioNavigation")
@@ -467,6 +563,10 @@ namespace Organizacional.Migrations
 
             modelBuilder.Entity("Organizacional.Models.Tarea", b =>
                 {
+                    b.HasOne("Organizacional.Models.Usuario", "IdColaboradorAsignadoNavigation")
+                        .WithMany()
+                        .HasForeignKey("IdColaboradorAsignado");
+
                     b.HasOne("Organizacional.Models.Documento", "IdDocumentoNavigation")
                         .WithMany("Tareas")
                         .HasForeignKey("IdDocumento")
@@ -477,6 +577,8 @@ namespace Organizacional.Migrations
                         .WithMany("Tareas")
                         .HasForeignKey("IdTecnicoAsignado")
                         .HasConstraintName("tareas_ibfk_2");
+
+                    b.Navigation("IdColaboradorAsignadoNavigation");
 
                     b.Navigation("IdDocumentoNavigation");
 
@@ -495,11 +597,13 @@ namespace Organizacional.Migrations
 
             modelBuilder.Entity("Organizacional.Models.Documento", b =>
                 {
-                    b.Navigation("Cotizaciones");
+                    b.Navigation("HerramientaRecogida");
 
                     b.Navigation("Historials");
 
                     b.Navigation("Mantenimientos");
+
+                    b.Navigation("MaterialesPendientes");
 
                     b.Navigation("SedesDocumentos");
 

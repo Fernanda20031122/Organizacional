@@ -19,17 +19,11 @@ namespace Organizacional.Models
         [Required]
         [StringLength(255)]
         public string NombreMaterial { get; set; }
-
-        [StringLength(255)]
-        public string? NombreHerramientaDejada { get; set; }
-
-        [StringLength(255)]
-        public string? UbicacionDejado { get; set; }
-
+        
         [Required]
         public bool EsSolicitado { get; set; }
         public bool MaterialEntregado { get; set; }
 
-        public DateTime FechaRegistro { get; set; } = DateTime.Now;
+        public DateTime? FechaRegistro { get; set; } = DateTime.Now;
     }
 }

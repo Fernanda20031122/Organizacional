@@ -4,8 +4,19 @@
     ViewData["Title"] = "Técnicos Registrados";
     Layout = "_Layout";
 }
+@{
+    var idUsuario = Context.Session.GetInt32("IdUsuario");
+    var rolUsuario = Context.Session.GetInt32("Rol");
+}
 
-<div class="container mt-4">
+@if (idUsuario == null || rolUsuario == null)
+{
+    <script>window.location.href = '/Auth/Login';</script>
+}
+
+@await Html.PartialAsync("_Sidebar")
+
+<div class="col-md-9 col-lg-10 p-4 contenido" style="margin-left: 240px;">
     <h2 class="mb-4">Técnicos Registrados</h2>
 
     @if (TempData["Mensaje"] != null)
