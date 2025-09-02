@@ -272,7 +272,8 @@ namespace Organizacional.Controllers
             if (nuevoEstado.Equals("Cancelado", StringComparison.OrdinalIgnoreCase) ||
                 nuevoEstado.Equals("Completado", StringComparison.OrdinalIgnoreCase))
             {
-                tarea.IdDocumentoNavigation.FechaCierre = DateTime.Now;
+                var colombiaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SA Pacific Standard Time");
+                tarea.IdDocumentoNavigation.FechaCierre = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, colombiaTimeZone);
             }
 
             await _context.SaveChangesAsync();

@@ -19,16 +19,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var m in Model)
+                            @foreach (var m in Model.Where(m => m.EsSolicitado))
                             {
                                 <tr>
-                                    <td>
-                                        <input type="checkbox"
-                                               name="materialesEntregados"
-                                               value="@m.Id"
-                                               @(m.MaterialEntregado ? "checked" : "") />
-                                    </td>
                                     <td>@m.NombreMaterial</td>
+                                    <td>@m.FechaRegistro?.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <input type="checkbox" name="materialesEntregados" value="@m.Id" @(m.MaterialEntregado ? "checked disabled" : "") />
+                                    </td>
                                 </tr>
                             }
                         </tbody>
