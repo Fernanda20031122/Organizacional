@@ -56,7 +56,7 @@ namespace Organizacional.Controllers
         public async Task<IActionResult> ListaMateriales(int idPendiente)
         {
             var materiales = await _context.MaterialesPendientes
-                .Where(m => m.IdDocumento == idPendiente)
+                .Where(m => m.IdDocumento == idPendiente && m.EsSolicitado && !m.MaterialEntregado)
                 .ToListAsync();
 
             return PartialView("_ListaMateriales", materiales);
