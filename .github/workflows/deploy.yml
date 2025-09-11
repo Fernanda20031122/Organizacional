@@ -51,19 +51,31 @@ jobs:
         script: |
           set -e
           cd /home/ubuntu/Organizacional
+          
+          git fetch origin
           git reset --hard origin/master
-          git pull origin master
-          echo "Limpiando carpeta publish anterior..."
-          cd /home/ubuntu/Organizacional/publish
-          # Borra todo menos wwwroot
-          find . -mindepth 1 -maxdepth 1 ! -name 'wwwroot' -exec rm -rf {} +
-          # Si existe wwwroot, borra todo menos uploads
-          if [ -d ./wwwroot ]; then
-            find ./wwwroot -mindepth 1 -maxdepth 1 ! -name 'uploads' -exec rm -rf {} +
+          git clean -fdx
+          
+          # Respalda uploads
+          UPBK=/home/ubuntu/uploads_backup_$(date +%s)
+          if [ -d ./publish/wwwroot/uploads ]; then
+            mkdir -p "$UPBK"
+            rsync -a ./publish/wwwroot/uploads/ "$UPBK"/
           fi
+          
+          # Borra publish entero
+          rm -rf ./publish
+          
           echo "Publicando app..."
-          cd /home/ubuntu/Organizacional
           dotnet publish ./Organizacional.csproj --configuration Release --output ./publish
+          
+          # Restaura uploads
+          if [ -d "$UPBK" ]; then
+            mkdir -p ./publish/wwwroot/uploads
+            rsync -a "$UPBK"/ ./publish/wwwroot/uploads/
+            rm -rf "$UPBK"
+          fi
+          
           echo "Publicación completada"
           sudo systemctl restart organiza.service
           echo "Servicio reiniciado"
