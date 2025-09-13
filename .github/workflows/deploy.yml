@@ -54,7 +54,10 @@ jobs:
           
           git fetch origin
           git reset --hard origin/master
-          git clean -fdx
+          git clean -fdx \
+          -e publish \
+          -e publish/wwwroot \
+          -e publish/wwwroot/uploads
           
           # Respalda uploads
           UPBK=/home/ubuntu/uploads_backup_$(date +%s)
