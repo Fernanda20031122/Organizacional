@@ -52,7 +52,6 @@
                         <td>@item.NumeroDocumento</td>
                         <td>@item.Tipo</td>
                         <td>
-                            @* mismos íconos que en Materiales *@
                             @if (item.Suministro)
                             {
                                 <i class="bi bi-box-seam text-primary me-1" title="Suministro"></i>
@@ -70,13 +69,13 @@
                                 <i class="bi bi-laptop text-dark me-1" title="Soporte"></i>
                             }
                         </td>
-                        <td>@item.EmpresaDestino</td>
+                        <td>@item.EmpresaNombre</td>
                         <td>
                             @(item.FechaRegistro.HasValue
                                 ? item.FechaRegistro.Value.ToString("dd/MM/yyyy")
                                 : "--")
                         </td>
-                        <td>@(string.IsNullOrEmpty(item.NombreUsuario) ? "No registrado" : item.NombreUsuario)</td>
+                        <td>@item.UltimoUsuario</td>
                         <td>
                             <button class="btn btn-primary btn-sm"
                                     onclick="verHerramientas(@item.Id)">

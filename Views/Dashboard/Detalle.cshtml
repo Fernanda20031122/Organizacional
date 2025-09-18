@@ -1,4 +1,4 @@
-﻿@model Organizacional.Models.Documento
+﻿@model Organizacional.Models.ViewModels.DetalleDocumentoViewModel
 @using System.Text.Json
 @using System.Security.Claims
 
@@ -7,7 +7,7 @@
     Layout = "_Layout";
     var tecnico = Model.Tareas.FirstOrDefault()?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado";
     var colaborador = Model.Tareas.FirstOrDefault()?.IdColaboradorAsignadoNavigation?.Nombre ?? "No asignado";
-    var tieneMantenimientos = Model.Mantenimientos != null && Model.Mantenimientos.Any();
+    var tieneMantenimientos = Model.Documento.Mantenimientos != null && Model.Documento.Mantenimientos.Any();
 }
 
 <h2>Detalle del Pendiente</h2>
@@ -16,44 +16,45 @@
     <div class="card-header bg-secondary text-white">
         <h5 class="mb-0">Informacion del Documento</h5>
     </div>
-    <p><strong>Tipo:</strong> @Model.TipoDocumento</p>
-    <p><strong>Número:</strong> @Model.NumeroDocumento</p>
-    <p><strong>Descripción:</strong> @Model.Descripcion</p>
-    <p><strong>Empresa Destino:</strong> @Model.EmpresaDestino</p>
-    <p><strong>Subido por:</strong> @Model.IdUsuarioSubioNavigation?.Nombre</p>
+    <p><strong>Tipo:</strong> @Model.Documento.TipoDocumento</p>
+    <p><strong>Número:</strong> @Model.Documento.NumeroDocumento</p>
+    <p><strong>Descripción:</strong> @Model.Documento.Descripcion</p>
+<p><strong>Empresa:</strong> @Model.EmpresaNombre</p>
+<p><strong>Subido por:</strong> @Model.Documento.IdUsuarioSubioNavigation?.Nombre</p>
+
     <p>
         <strong>Fecha de subida:</strong>
-        @(Model.FechaSubida.HasValue
-                ? Model.FechaSubida.Value.ToDateTime(TimeOnly.MinValue).ToString("dd/MM/yyyy")
+        @(Model.Documento.FechaSubida.HasValue
+                ? Model.Documento.FechaSubida.Value.ToDateTime(TimeOnly.MinValue).ToString("dd/MM/yyyy")
                 : "No registrada")
     </p>
 
-    @if (Model.TipoDocumento == "Contrato")
+    @if (Model.Documento.TipoDocumento == "Contrato")
     {
         <p>
             <strong>Fecha Inicio:</strong>
-            @(Model.FechaInicio.HasValue
-                    ? Model.FechaInicio.Value.ToDateTime(TimeOnly.MinValue).ToString("dd/MM/yyyy")
+            @(Model.Documento.FechaInicio.HasValue
+                    ? Model.Documento.FechaInicio.Value.ToDateTime(TimeOnly.MinValue).ToString("dd/MM/yyyy")
                     : "No registrada")
                                   </p>
                                   <p>
                                       <strong>Fecha Fin:</strong>
-            @(Model.FechaFin.HasValue
-                    ? Model.FechaFin.Value.ToDateTime(TimeOnly.MinValue).ToString("dd/MM/yyyy")
+            @(Model.Documento.FechaFin.HasValue
+                    ? Model.Documento.FechaFin.Value.ToDateTime(TimeOnly.MinValue).ToString("dd/MM/yyyy")
                     : "No registrada")
     </p>
         }
     else
     {
-        <p><strong>Fecha Generación:</strong> @Model.FechaGeneracion?.ToString("dd/MM/yyyy")</p>
+        <p><strong>Fecha Generación:</strong> @Model.Documento.FechaGeneracion?.ToString("dd/MM/yyyy")</p>
     }
 
     <p>
         <strong>Servicios:</strong>
-        @(Model.Suministro == true ? "Suministro " : "")
-        @(Model.Instalacion == true ? "Instalación " : "")
-        @(Model.Mantenimiento == true ? "Mantenimiento" : "")
-        @(Model.Soporte == true ? "Soporte" : "")
+        @(Model.Documento.Suministro == true ? "Suministro " : "")
+        @(Model.Documento.Instalacion == true ? "Instalación " : "")
+        @(Model.Documento.Mantenimiento == true ? "Mantenimiento" : "")
+        @(Model.Documento.Soporte == true ? "Soporte" : "")
     </p>
         <!-- ASIGNACIÓN -->
     <div class="card shadow-sm mb-4">
@@ -65,15 +66,15 @@
             <p><strong>Colaborador asignado:</strong> @colaborador</p>
 
             <div class="d-flex gap-3 mt-3">
-                @if (tecnico == "No asignado" && (Model.Instalacion == true || Model.Mantenimiento == true))
+                @if (tecnico == "No asignado" && (Model.Documento.Instalacion == true || Model.Documento.Mantenimiento == true))
                 {
-                    <a asp-action="AsignarTecnico" asp-route-id="@Model.IdDocumento" class="btn btn-warning">
+                    <a asp-action="AsignarTecnico" asp-route-id="@Model.Documento.IdDocumento" class="btn btn-warning">
                         <i class="bi bi-person-gear"></i> Asignar Técnico
                     </a>
                 }
                 @if (colaborador == "No asignado")
                 {
-                    <a asp-action="AsignarColaborador" asp-route-id="@Model.IdDocumento" class="btn btn-primary">
+                    <a asp-action="AsignarColaborador" asp-route-id="@Model.Documento.IdDocumento" class="btn btn-primary">
                         <i class="bi bi-person-plus"></i> Asignar Colaborador
                     </a>
                 }
@@ -99,7 +100,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var m in Model.Mantenimientos)
+                @foreach (var m in Model.Documento.Mantenimientos)
                 {
                     <tr>
                         <td>@m.TotalMantenimientos</td>
@@ -146,7 +147,7 @@
 
     <!-- Tarjetas visibles solo en móviles -->
     <div class="d-block d-md-none">
-        @foreach (var m in Model.Mantenimientos)
+        @foreach (var m in Model.Documento.Mantenimientos)
         {
             <div class="card mb-3 shadow-sm">
                 <div class="card-body">
@@ -199,10 +200,10 @@
 
     <div class="card-body">
         <h4 class="mt-4">🧾 Materiales solicitados</h4>
-        @if (Model.MaterialesPendientes != null && Model.MaterialesPendientes.Any(m => m.EsSolicitado))
+        @if (Model.Documento.MaterialesPendientes != null && Model.Documento.MaterialesPendientes.Any(m => m.EsSolicitado))
         {
             <form method="post" asp-action="ActualizarEntregaMateriales" asp-controller="Materiales" method="post">
-                <input type="hidden" name="idDocumento" value="@Model.IdDocumento" />
+                <input type="hidden" name="idDocumento" value="@Model.Documento.IdDocumento" />
                 <table class="table table-bordered">
                     <thead>
                         <tr>
@@ -212,7 +213,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var m in Model.MaterialesPendientes.Where(m => m.EsSolicitado))
+                        @foreach (var m in Model.Documento.MaterialesPendientes.Where(m => m.EsSolicitado))
                         {
                             <tr>
                                 <td>@m.NombreMaterial</td>
@@ -234,10 +235,10 @@
         }
 
         <h4 class="mt-4">🧰 Herramientas dejadas en sitio</h4>
-        @if (Model.HerramientaRecogida != null && Model.HerramientaRecogida.Any())
+        @if (Model.Documento.HerramientaRecogida != null && Model.Documento.HerramientaRecogida.Any())
         {
         <form asp-action="ActualizarRecogidaHerramientas" asp-controller="Herramientas" method="post">
-            <input type="hidden" name="idDocumento" value="@Model.IdDocumento" />
+            <input type="hidden" name="idDocumento" value="@Model.Documento.IdDocumento" />
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -249,7 +250,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var h in Model.HerramientaRecogida)
+                    @foreach (var h in Model.Documento.HerramientaRecogida)
                     {
                         <tr>
                             <td>@h.NombreHerramienta</td>
@@ -283,7 +284,7 @@
             <!-- FORMULARIO PARA SOLICITAR MATERIALES -->
             <div class="collapse" id="formMateriales">
                 <form asp-action="RegistrarMaterial" asp-controller="Materiales" method="post">
-                    <input type="hidden" name="IdDocumento" value="@Model.IdDocumento" />
+                    <input type="hidden" name="IdDocumento" value="@Model.Documento.IdDocumento" />
                     <div class="mb-2">
                         <label>Nombre del material</label>
                         <input type="text" name="NombreMaterial" class="form-control" required />
@@ -302,7 +303,7 @@
             <!-- FORMULARIO PARA REGISTRAR HERRAMIENTA -->
             <div class="collapse" id="formHerramientas">
                 <form asp-action="RegistrarHerramienta"asp-controller="Herramientas" method="post">
-                    <input type="hidden" name="IdDocumento" value="@Model.IdDocumento" />
+                    <input type="hidden" name="IdDocumento" value="@Model.Documento.IdDocumento" />
                     <input type="hidden" name="IdUsuario" value="@User.FindFirstValue(ClaimTypes.NameIdentifier)" />
 
                     <div class="form-group">
@@ -364,9 +365,9 @@
     <div class="row">
         <div class="col-md-6">
             <h4>Documento PDF</h4>
-            @if (!string.IsNullOrEmpty(Model.ArchivoUrl))
+            @if (!string.IsNullOrEmpty(Model.Documento.ArchivoUrl))
             {
-                <iframe src="@Model.ArchivoUrl" width="100%" height="500px"></iframe>
+                <iframe src="@Model.Documento.ArchivoUrl" width="100%" height="500px"></iframe>
             }
             else
             {
@@ -376,9 +377,9 @@
 
         <div class="col-md-6">
             <h4>Cotización PDF</h4>
-            @if (!string.IsNullOrEmpty(Model.CotizacionArchivoUrl))
+            @if (!string.IsNullOrEmpty(Model.Documento.CotizacionArchivoUrl))
             {
-                <iframe src="@Model.CotizacionArchivoUrl" width="100%" height="500px"></iframe>
+                <iframe src="@Model.Documento.CotizacionArchivoUrl" width="100%" height="500px"></iframe>
             }
             else
             {

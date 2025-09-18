@@ -20,24 +20,41 @@ namespace Organizacional.Controllers
         // ✅ LISTA DE HERRAMIENTAS PENDIENTES DE RECOGER
         public async Task<IActionResult> Index()
         {
-            var pendientesDb = await _context.Documentos
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresa = HttpContext.Session.GetInt32("IdEmpresa");  
+
+            IQueryable<Documento> query = _context.Documentos
                 .Where(d => d.HerramientaRecogida.Any(h => !h.Recogida))
+                .Include(d => d.IdEmpresaNavigation)
                 .Include(d => d.HerramientaRecogida)
+                    .ThenInclude(h => h.IdUsuarioNavigation)
                 .Include(d => d.Tareas)
-                    .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
-                .ToListAsync();
+                    .ThenInclude(t => t.IdTecnicoAsignadoNavigation);
+            // 👇 Si es Cliente (Rol = 3), solo ve documentos de su empresa
+            if (rol == 3 && idEmpresa.HasValue)
+            {
+                query = query.Where(d => d.IdEmpresa == idEmpresa.Value);
+            }
+
+            var pendientesDb = await query.ToListAsync();
 
             var pendientes = pendientesDb.Select(d => new HerramientasPorRecogerViewModel
             {
                 Id = d.IdDocumento,
                 NumeroDocumento = d.NumeroDocumento,
-                EmpresaDestino = d.EmpresaDestino,
+                EmpresaNombre = d.IdEmpresaNavigation?.Nombre ?? "Sin empresa",
                 FechaRegistro = (d.HerramientaRecogida != null && d.HerramientaRecogida.Any())
                     ? d.HerramientaRecogida
-                        .OrderBy(h => h.FechaRegistro)
+                        .OrderByDescending(h => h.FechaRegistro) // 👈 última
                         .Select(h => h.FechaRegistro)
                         .FirstOrDefault()
                     : (DateTime?)null,
+                UltimoUsuario = (d.HerramientaRecogida != null && d.HerramientaRecogida.Any())
+                    ? d.HerramientaRecogida
+                        .OrderByDescending(h => h.FechaRegistro) // 👈 última
+                        .Select(h => h.IdUsuarioNavigation?.Nombre)
+                        .FirstOrDefault()
+                    : "N/A",
                 TecnicoAsignado = (d.Suministro.GetValueOrDefault() || d.Instalacion.GetValueOrDefault() || d.Mantenimiento.GetValueOrDefault() || d.Soporte.GetValueOrDefault())
                     ? d.Tareas.FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado"
                     : "N/A",

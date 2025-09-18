@@ -1,0 +1,22 @@
+@model Organizacional.Models.Empresa
+
+@{
+    ViewData["Title"] = "Editar Empresa";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Editar Empresa</h2>
+
+    <form asp-action="Editar" method="post" class="card p-4 shadow-sm">
+        <input type="hidden" asp-for="IdEmpresa" />
+
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label"></label>
+            <input asp-for="Nombre" class="form-control" />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
+    </form>
+</div>

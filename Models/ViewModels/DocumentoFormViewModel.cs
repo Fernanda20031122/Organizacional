@@ -21,6 +21,7 @@ namespace Organizacional.Models.ViewModels
         public DateOnly? FechaFin { get; set; }
 
         public string? EmpresaDestino { get; set; }
+        public int IdEmpresa { get; set; }
 
         // Tipos de servicio
         public bool Suministro { get; set; }

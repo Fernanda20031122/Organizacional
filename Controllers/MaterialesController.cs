@@ -23,6 +23,7 @@ namespace Organizacional.Controllers
         {
             var pendientesDb = await _context.Documentos
                 .Where(d => d.MaterialesPendientes.Any(m => !m.MaterialEntregado))
+                .Include(d => d.IdEmpresaNavigation)
                 .Include(d => d.MaterialesPendientes)
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
@@ -31,7 +32,7 @@ namespace Organizacional.Controllers
                 {
                     IdPendiente = d.IdDocumento,
                     NumeroDocumento = d.NumeroDocumento,
-                    EmpresaDestino = d.EmpresaDestino,
+                    EmpresaNombre = d.IdEmpresaNavigation?.Nombre ?? "Sin empresa",
                     FechaRegistro = (d.MaterialesPendientes != null && d.MaterialesPendientes.Any())
                         ? d.MaterialesPendientes
                             .OrderBy(m => m.FechaRegistro)

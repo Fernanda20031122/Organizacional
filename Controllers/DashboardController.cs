@@ -32,6 +32,7 @@ namespace Organizacional.Controllers
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
                 .Where(d => !d.Tareas.Any() || d.Tareas.All(t => t.Estado != "Completado" && t.Estado != "Cancelado"))
+                .Include(d => d.IdEmpresaNavigation) // 👈 incluir la empresa
                 .ToListAsync();
 
             var modelo = documentos.Select(d => new DashboardItemViewModel
@@ -40,7 +41,7 @@ namespace Organizacional.Controllers
                 FechaInicio = d.FechaInicio?.ToDateTime(TimeOnly.MinValue),
                 FechaFin = d.FechaFin?.ToDateTime(TimeOnly.MinValue),
                 IdDocumento = d.IdDocumento,
-                EmpresaDestino = d.EmpresaDestino ?? "Sin empresa",
+                EmpresaNombre = d.IdEmpresaNavigation?.Nombre ?? "Sin empresa",
                 Tipo = d.TipoDocumento ?? "Sin tipo",
                 NumeroDocumento = d.NumeroDocumento ?? "Sin número",
                 SubidoPor = d.IdUsuarioSubioNavigation?.Nombre ?? "Desconocido",
@@ -92,7 +93,7 @@ namespace Organizacional.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Crear() 
+        public async Task<IActionResult> Crear()
         {
             var tecnicos = await _context.Usuarios
                 .Where(u => u.IdRol == 2 && u.Estado == "activo")
@@ -102,8 +103,13 @@ namespace Organizacional.Controllers
                 .Where(u => u.IdRol == 1 && u.Estado == "activo")
                 .ToListAsync();
 
+            var empresas = await _context.Empresas
+                .OrderBy(e => e.Nombre)
+                .ToListAsync();
+
             ViewBag.Tecnicos = new SelectList(tecnicos, "IdUsuario", "Nombre");
             ViewBag.Colaboradores = new SelectList(colaboradores, "IdUsuario", "Nombre");
+            ViewBag.Empresas = new SelectList(empresas, "IdEmpresa", "Nombre");
 
             return View(new DocumentoFormViewModel());
         }
@@ -142,8 +148,10 @@ namespace Organizacional.Controllers
             {
                 var tecnicos = await _context.Usuarios.Where(u => u.IdRol == 2 && u.Estado == "activo").ToListAsync();
                 var colaboradores = await _context.Usuarios.Where(u => u.IdRol == 1 && u.Estado == "activo").ToListAsync();
+                var empresas = await _context.Empresas.ToListAsync();
                 ViewBag.Tecnicos = new SelectList(tecnicos, "IdUsuario", "Nombre");
                 ViewBag.Colaboradores = new SelectList(colaboradores, "IdUsuario", "Nombre");
+                ViewBag.Empresas = new SelectList(empresas, "IdEmpresa", "Nombre");
                 return View(modelo);
             }
 
@@ -154,7 +162,7 @@ namespace Organizacional.Controllers
                 TipoDocumento = modelo.TipoDocumento,
                 NumeroDocumento = modelo.NumeroDocumento,
                 Descripcion = modelo.Descripcion,
-                EmpresaDestino = modelo.EmpresaDestino,
+                IdEmpresa = modelo.IdEmpresa,
                 Suministro = modelo.Suministro,
                 Instalacion = modelo.Instalacion,
                 Mantenimiento = modelo.Mantenimiento,
@@ -234,7 +242,6 @@ namespace Organizacional.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        
         public async Task<IActionResult> Detalle(int id) // Vista Detalle del Pendiente
         {
             var documento = await _context.Documentos
@@ -247,12 +254,23 @@ namespace Organizacional.Controllers
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdColaboradorAsignadoNavigation)
                 .Include(d => d.Mantenimientos)
+                .Include(d => d.IdEmpresaNavigation) // 👈 aquí cargas la empresa
                 .FirstOrDefaultAsync(d => d.IdDocumento == id);
 
             if (documento == null)
                 return NotFound();
 
-            return View(documento);
+            var viewModel = new DetalleDocumentoViewModel
+            {
+                Documento = documento,
+                EmpresaNombre = documento.IdEmpresaNavigation?.Nombre ?? "Sin empresa",
+                Tareas = documento.Tareas.ToList(),
+                Materiales = documento.MaterialesPendientes.ToList(),
+                UsuarioActual = await _context.Usuarios
+                    .FirstOrDefaultAsync(u => u.IdUsuario == documento.IdUsuarioSubio) ?? new Usuario()
+            };
+
+            return View(viewModel);
         }
 
         [HttpPost]
@@ -277,21 +295,6 @@ namespace Organizacional.Controllers
             }
 
             await _context.SaveChangesAsync();
-
-            // Crear notificación para el técnico (si tiene uno asignado)
-            if (tarea.IdTecnicoAsignado != null)
-            {
-                var notificacion = new Notificacione
-                {
-                    IdUsuario = tarea.IdTecnicoAsignado.Value,
-                    Mensaje = $"El estado del pendiente '{tarea.IdDocumentoNavigation?.NumeroDocumento ?? "N/A"}' fue actualizado a '{nuevoEstado}'.",
-                    Leida = false,
-                    Fecha = DateTime.Now
-                };
-
-                _context.Notificaciones.Add(notificacion);
-                await _context.SaveChangesAsync();
-            }
 
             return RedirectToAction("Detalle", new { id = tarea.IdDocumento });
         }
@@ -348,21 +351,6 @@ namespace Organizacional.Controllers
             }
 
             await _context.SaveChangesAsync();
-
-            // Crear notificación para el técnico
-            var tecnico = await _context.Usuarios.FindAsync(idTecnico);
-            if (tecnico != null)
-            {
-                var notificacion = new Notificacione
-                {
-                    IdUsuario = tecnico.IdUsuario,
-                    Mensaje = $"Se te ha asignado un nuevo pendiente (ID: {idDocumento})",
-                    Leida = false,
-                    Fecha = DateTime.Now
-                };
-                _context.Notificaciones.Add(notificacion);
-                await _context.SaveChangesAsync();
-            }
 
             return RedirectToAction(nameof(Detalle), new { id = idDocumento });
         }
@@ -453,24 +441,7 @@ namespace Organizacional.Controllers
             var documento = await _context.Documentos
                 .Include(d => d.Tareas)
                 .FirstOrDefaultAsync(d => d.IdDocumento == mantenimiento.IdDocumento);
-
-            if (documento != null)
-            {
-                // Buscar técnico asignado (si hay)
-                var tecnicoAsignado = documento.Tareas.FirstOrDefault()?.IdTecnicoAsignado;
-                if (tecnicoAsignado.HasValue)
-                {
-                    var notificacion = new Notificacione
-                    {
-                        IdUsuario = tecnicoAsignado.Value,
-                        Mensaje = $"Se ha registrado un nuevo mantenimiento para el documento {documento.NumeroDocumento}.",
-                        Leida = false,
-                        Fecha = DateTime.Now
-                    };
-
-                    _context.Notificaciones.Add(notificacion);
-                }
-            }
+                
             return RedirectToAction("Detalle", new { id = mantenimiento.IdDocumento });
         }
 
@@ -495,6 +466,7 @@ namespace Organizacional.Controllers
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
                 .Where(d => d.Tareas.Any(t => t.Estado == "Completado" || t.Estado == "Cancelado"))
+                .Include(d => d.IdEmpresaNavigation) // 👈 incluir la empresa
                 .ToListAsync();
 
             var modelo = pendientes.Select(d => new DashboardItemViewModel
@@ -513,10 +485,9 @@ namespace Organizacional.Controllers
                 Mantenimiento = d.Mantenimiento ?? false,
                 Soporte = d.Soporte ?? false,
                 TecnicoAsignado = d.Tareas.FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado",
-                EmpresaDestino = d.EmpresaDestino ?? "Sin empresa"
+                EmpresaNombre = d.IdEmpresaNavigation?.Nombre ?? "Sin empresa",
             }).ToList();
             return View(modelo);
         }
     }
 }
-

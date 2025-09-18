@@ -1,0 +1,18 @@
+@model Organizacional.Models.Empresa
+
+@{
+    ViewData["Title"] = "Crear Empresa";
+}
+
+<h2>Crear Empresa</h2>
+
+<form asp-action="Crear" method="post">
+    <div class="mb-3">
+        <label asp-for="Nombre" class="form-label"></label>
+        <input asp-for="Nombre" class="form-control" />
+        <span asp-validation-for="Nombre" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>

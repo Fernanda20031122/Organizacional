@@ -44,9 +44,12 @@
         <textarea asp-for="Descripcion" class="form-control"></textarea>
     </div>
 
-    <div class="form-group">
-        <label asp-for="EmpresaDestino" class="control-label"></label>
-        <input asp-for="EmpresaDestino" class="form-control" />
+    <div class="mb-3">
+        <label asp-for="IdEmpresa" class="form-label">Empresa</label>
+        <select asp-for="IdEmpresa" class="form-control" asp-items="ViewBag.Empresas">
+            <option value="">-- Seleccione una empresa --</option>
+        </select>
+        <span asp-validation-for="IdEmpresa" class="text-danger"></span>
     </div>
 
     <div class="mb-3">

@@ -1,0 +1,73 @@
+@model Organizacional.Models.ViewModels.UsuarioViewModel
+
+@{
+    ViewData["Title"] = "Crear Usuario";
+    Layout = "_Layout";
+}
+@{
+    var idUsuario = Context.Session.GetInt32("IdUsuario");
+    var rolUsuario = Context.Session.GetInt32("Rol");
+}
+
+@if (idUsuario == null || rolUsuario == null)
+{
+    <script>window.location.href = '/Auth/Login';</script>
+}
+
+@await Html.PartialAsync("_Sidebar")
+
+<div class="col-md-9 col-lg-10 p-4 contenido" style="margin-left: 240px;">
+    <h2>Crear Usuario</h2>
+
+    <form asp-action="Crear" method="post" class="card p-4 shadow-sm">
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label"></label>
+            <input asp-for="Nombre" class="form-control" />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Correo" class="form-label"></label>
+            <input asp-for="Correo" type="email" class="form-control" />
+            <span asp-validation-for="Correo" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Contrasena" class="form-label"></label>
+            <input asp-for="Contrasena" type="password" class="form-control" />
+            <span asp-validation-for="Contrasena" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="IdRol" class="form-label">Rol</label>
+            <select asp-for="IdRol" class="form-control" asp-items="Model.Roles" id="rolSelect">
+                <option value="">-- Seleccione un rol --</option>
+            </select>
+            <span asp-validation-for="IdRol" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3" id="empresaField" style="display:none;">
+            <label asp-for="IdEmpresa" class="form-label">Empresa</label>
+            <select asp-for="IdEmpresa" class="form-control" asp-items="Model.Empresas">
+                <option value="">-- Seleccione una empresa --</option>
+            </select>
+            <span asp-validation-for="IdEmpresa" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Crear Usuario</button>
+    </form>
+
+    @section Scripts {
+        <partial name="_ValidationScriptsPartial" />
+        <script>
+            document.getElementById("rolSelect").addEventListener("change", function () {
+                var empresaField = document.getElementById("empresaField");
+                if (this.value === "3") { // 👈 3 = Cliente
+                    empresaField.style.display = "block";
+                } else {
+                    empresaField.style.display = "none";
+                }
+            });
+        </script>
+    }
+</div>

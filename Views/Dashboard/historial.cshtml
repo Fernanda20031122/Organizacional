@@ -74,7 +74,7 @@
                                         <i class="bi bi-laptop text-dark me-1" data-bs-toggle="tooltip" title="Soporte"></i>
                                     }
                                 </td>
-                                <td>@item.EmpresaDestino</td>
+                                <td>@item.EmpresaNombre</td>
                                 <td>
                                     @switch (item.Estado?.Trim().ToLower())
                                     {
@@ -123,7 +123,7 @@
                 @foreach (var item in Model)
                 {
                     <div class="card mb-3 p-3 shadow-sm @(item.TecnicoAsignado == Context.Session.GetString("NombreUsuario") ? "border-warning" : "")">
-                        <h5>#@item.NumeroDocumento - @item.EmpresaDestino</h5>
+                        <h5>#@item.NumeroDocumento - @item.EmpresaNombre</h5>
                         <p><strong>Tipo:</strong>
                             @if (item.Suministro) { <i class="bi bi-box-seam text-primary me-1"></i> }
                             @if (item.Instalacion) { <i class="bi bi-tools text-success me-1"></i> }

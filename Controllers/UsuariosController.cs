@@ -20,78 +20,82 @@ namespace Organizacional.Controllers
             _context = context;
         }
 
-        // Solo visible para administrador
         [HttpGet]
-        public IActionResult CrearAdministrador()
+        public IActionResult CrearUsuario()
         {
-            return View();
+            var vm = new UsuarioViewModel
+            {
+                Roles = _context.Roles.Select(r => new SelectListItem
+                {
+                    Value = r.IdRol.ToString(),
+                    Text = r.NombreRol
+                }).ToList(),
+
+                Empresas = _context.Empresas.Select(e => new SelectListItem
+                {
+                    Value = e.IdEmpresa.ToString(),
+                    Text = e.Nombre
+                }).ToList()
+            };
+
+            return View(vm);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CrearAdministrador(Usuario modelo)
+        public async Task<IActionResult> CrearUsuario(UsuarioViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                if (await _context.Usuarios.AnyAsync(u => u.Correo == modelo.Correo))
+                // volver a cargar selects si hay error
+                model.Roles = _context.Roles.Select(r => new SelectListItem
                 {
-                    ModelState.AddModelError("Correo", "Ya existe un usuario con este correo.");
-                    return View(modelo);
-                }
+                    Value = r.IdRol.ToString(),
+                    Text = r.NombreRol
+                }).ToList();
 
-                modelo.Contrasena = modelo.Contrasena; // O encriptada si se aplica
-                modelo.DebeCambiarContrasena = true;
-                modelo.Estado = "activo";   
-                modelo.FechaCreacion = DateTime.Now;
-                modelo.IdRol = 1; // 1 = Administrador
+                model.Empresas = _context.Empresas.Select(e => new SelectListItem
+                {
+                    Value = e.IdEmpresa.ToString(),
+                    Text = e.Nombre
+                }).ToList();
 
-                _context.Usuarios.Add(modelo);
-                await _context.SaveChangesAsync();
-
-                TempData["Mensaje"] = "Administrador creado correctamente.";
-                return RedirectToAction("Index");
+                return View(model);
             }
 
-            return View(modelo);
-        }
-        [HttpGet]
-        public IActionResult CrearTecnico()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CrearTecnico(Usuario modelo)
-        {
-            if (ModelState.IsValid)
+            if (await _context.Usuarios.AnyAsync(u => u.Correo == model.Correo))
             {
-                if (await _context.Usuarios.AnyAsync(u => u.Correo == modelo.Correo))
-                {
-                    ModelState.AddModelError("Correo", "Ya existe un usuario con este correo.");
-                    return View(modelo);
-                }
-
-                modelo.Contrasena = modelo.Contrasena; // O encriptada si se aplica
-                modelo.DebeCambiarContrasena = true;
-                modelo.Estado = "activo";   
-                modelo.FechaCreacion = DateTime.Now;
-                modelo.IdRol = 2; // 2 = Tecnico
-
-                _context.Usuarios.Add(modelo);
-                await _context.SaveChangesAsync();
-
-                TempData["Mensaje"] = "Tecnico creado correctamente.";
-                return RedirectToAction("Index");
+                ModelState.AddModelError("Correo", "Ya existe un usuario con este correo.");
+                return View(model);
             }
 
-            return View(modelo);
+            var nuevoUsuario = new Usuario
+            {
+                Nombre = model.Nombre,
+                Correo = model.Correo,
+                Contrasena = model.Contrasena, // 🔐 aquí deberías hashear
+                IdRol = model.IdRol,
+                IdEmpresa = model.IdEmpresa,   // 👈 se asigna el FK, no el nombre
+                Estado = "activo",
+                DebeCambiarContrasena = true,
+                FechaCreacion = DateTime.Now
+            };
+
+            _context.Usuarios.Add(nuevoUsuario);
+            await _context.SaveChangesAsync();
+
+            TempData["Mensaje"] = "Usuario creado correctamente.";
+            return RedirectToAction("Index");
         }
 
         // Aquí podrías listar todos los técnicos
         public async Task<IActionResult> Index()
         {
-            var usuarios = await _context.Usuarios.Include(u => u.IdRolNavigation).ToListAsync();
+            var usuarios = await _context.Usuarios
+                .Include(u => u.IdRolNavigation)
+                .Include(u => u.Empresa) // 👈 agregamos la empresa
+                .ToListAsync();
+
             return View(usuarios);
         }
         [HttpPost]

@@ -18,6 +18,13 @@ public partial class Usuario
 
     public string? Estado { get; set; }
 
+    // 🔹 Relación con Empresa (nuevo)public int? IdEmpresa { get; set; }
+
+    public int? IdEmpresa { get; set; }
+
+    [ForeignKey("IdEmpresa")]
+    public virtual Empresa? Empresa { get; set; }
+
     [NotMapped]
     public string? ContrasenaTemporal { get; set; }
     public bool? DebeCambiarContrasena { get; set; } = true;
@@ -29,8 +36,6 @@ public partial class Usuario
     public virtual ICollection<Historial> Historials { get; set; } = new List<Historial>();
 
     public virtual Role? IdRolNavigation { get; set; }
-
-    public virtual ICollection<Notificacione> Notificaciones { get; set; } = new List<Notificacione>();
 
     public virtual ICollection<Tarea> Tareas { get; set; } = new List<Tarea>();
 }

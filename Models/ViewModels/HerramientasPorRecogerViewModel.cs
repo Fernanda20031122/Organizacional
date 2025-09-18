@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 namespace Organizacional.Models.ViewModels
 {
     public class HerramientasPorRecogerViewModel
@@ -8,11 +9,11 @@ namespace Organizacional.Models.ViewModels
         public string NumeroDocumento { get; set; } = "";
 
         //Empresa a la que se le dejó la herramienta
-        public string EmpresaDestino { get; set; } = "";
-
+        public string EmpresaNombre { get; set; } = "";
         // Persona responsable de la herramienta
         public string TecnicoAsignado { get; set; } = "";
-        public string NombreUsuario { get; set; } = "";
+        public Usuario IdUsuarioNavigation { get; set; }
+        public string UltimoUsuario { get; set; }
         public string DejadaPor { get; set; } = "";
 
         // Dónde se encuentra la herramienta

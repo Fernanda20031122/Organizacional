@@ -21,16 +21,13 @@ public partial class OrganizacionalContext : DbContext
     public virtual DbSet<Documento> Documentos { get; set; }
     public virtual DbSet<MaterialesPendiente> MaterialesPendientes { get; set; }
     public DbSet<HerramientaRecogida> HerramientaRecogida { get; set; }
+    public virtual DbSet<Empresa> Empresas { get; set; }
 
     public virtual DbSet<Historial> Historials { get; set; }
 
     public virtual DbSet<Mantenimiento> Mantenimientos { get; set; }
 
-    public virtual DbSet<Notificacione> Notificaciones { get; set; }
-
     public virtual DbSet<Role> Roles { get; set; }
-
-    public virtual DbSet<SedesDocumento> SedesDocumentos { get; set; }
 
     public virtual DbSet<Tarea> Tareas { get; set; }
 
@@ -78,9 +75,9 @@ public partial class OrganizacionalContext : DbContext
             entity.Property(e => e.Descripcion)
                 .HasColumnType("text")
                 .HasColumnName("descripcion");
-            entity.Property(e => e.EmpresaDestino)
-                .HasMaxLength(100)
-                .HasColumnName("empresa_destino");
+            entity.Property(e => e.IdEmpresa)     
+                .HasColumnType("int(11)")
+                .HasColumnName("IdEmpresa");
             entity.Property(e => e.FechaFin).HasColumnName("fecha_fin");
             entity.Property(e => e.FechaGeneracion).HasColumnName("fecha_generacion");
             entity.Property(e => e.FechaInicio).HasColumnName("fecha_inicio");
@@ -177,36 +174,6 @@ public partial class OrganizacionalContext : DbContext
                 .HasConstraintName("mantenimientos_ibfk_1");
         });
 
-        modelBuilder.Entity<Notificacione>(entity =>
-        {
-            entity.HasKey(e => e.IdNotificacion).HasName("PRIMARY");
-
-            entity.ToTable("notificaciones");
-
-            entity.HasIndex(e => e.IdUsuario, "id_usuario");
-
-            entity.Property(e => e.IdNotificacion)
-                .HasColumnType("int(11)")
-                .HasColumnName("id_notificacion");
-            entity.Property(e => e.Fecha)
-                .HasColumnType("datetime")
-                .HasColumnName("fecha");
-            entity.Property(e => e.IdUsuario)
-                .HasColumnType("int(11)")
-                .HasColumnName("id_usuario");
-            entity.Property(e => e.Leida)
-                .HasDefaultValueSql("'0'")
-                .HasColumnName("leida");
-            entity.Property(e => e.Mensaje)
-                .HasColumnType("text")
-                .HasColumnName("mensaje");
-
-            entity.HasOne(d => d.IdUsuarioNavigation).WithMany(p => p.Notificaciones)
-                .HasForeignKey(d => d.IdUsuario)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("notificaciones_ibfk_1");
-        });
-
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.IdRol).HasName("PRIMARY");
@@ -219,30 +186,6 @@ public partial class OrganizacionalContext : DbContext
             entity.Property(e => e.NombreRol)
                 .HasMaxLength(50)
                 .HasColumnName("nombre_rol");
-        });
-
-        modelBuilder.Entity<SedesDocumento>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PRIMARY");
-
-            entity.ToTable("sedes_documento");
-
-            entity.HasIndex(e => e.IdDocumento, "id_documento");
-
-            entity.Property(e => e.Id)
-                .HasColumnType("int(11)")
-                .HasColumnName("id");
-            entity.Property(e => e.Direccion)
-                .HasMaxLength(255)
-                .HasColumnName("direccion");
-            entity.Property(e => e.IdDocumento)
-                .HasColumnType("int(11)")
-                .HasColumnName("id_documento");
-
-            entity.HasOne(d => d.IdDocumentoNavigation).WithMany(p => p.SedesDocumentos)
-                .HasForeignKey(d => d.IdDocumento)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("sedes_documento_ibfk_1");
         });
 
         modelBuilder.Entity<Tarea>(entity =>

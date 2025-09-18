@@ -17,17 +17,75 @@
         </main>
     </div>
 
+    <!-- 🔹 Modal de advertencia de sesión -->
+    <div class="modal fade" id="sessionWarningModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">⚠️ Sesión por expirar</h5>
+                </div>
+                <div class="modal-body">
+                    Tu sesión expirará en <b>2 minutos</b> por inactividad.<br />
+                    ¿Deseas seguir conectado?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="stayLoggedInBtn" class="btn btn-primary" data-bs-dismiss="modal">
+                        Seguir conectado
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
+        // ⚡ Configuración
+        const warningTime = 28 * 60 * 1000; // 28 minutos
+        const logoutTime = 30 * 60 * 1000; // 30 minutos
+
+        let warningTimer, logoutTimer;
+
+        function resetSessionTimers() {
+            clearTimeout(warningTimer);
+            clearTimeout(logoutTimer);
+
+            // Mostrar modal a los 28 minutos
+            warningTimer = setTimeout(() => {
+                var modal = new bootstrap.Modal(document.getElementById('sessionWarningModal'));
+                modal.show();
+            }, warningTime);
+
+            // Redirigir al login a los 30 minutos
+            logoutTimer = setTimeout(() => {
+                window.location.href = '@Url.Action("Logout", "Auth")';
+            }, logoutTime);
+        }
+
+        // Escuchar actividad del usuario
+        document.addEventListener('mousemove', resetSessionTimers);
+        document.addEventListener('keydown', resetSessionTimers);
+
+        // Acción al hacer clic en "Seguir conectado"
+        document.getElementById("stayLoggedInBtn").addEventListener("click", () => {
+            fetch('@Url.Action("KeepAlive", "Auth")', {
+                method: "POST"
+            })
+            .then(r => r.json())
+            .then(() => {
+                resetSessionTimers(); // 🔄 reinicia contadores del modal
+            })
+            .catch(err => console.error("Error renovando sesión:", err));
+        });
+
+        // Iniciar timers cuando carga la página
+        resetSessionTimers();
     </script>
+
     <!-- Botón flotante de regreso al Dashboard -->
     <a href="@Url.Action("Index", "Dashboard")" class="btn btn-primary btn-lg rounded-circle shadow position-fixed"
        style="bottom: 20px; right: 20px; z-index: 1000;" data-bs-toggle="tooltip" title="Volver al listado">

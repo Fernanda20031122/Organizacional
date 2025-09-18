@@ -51,12 +51,24 @@ namespace Organizacional.Controllers
             HttpContext.Session.SetString("NombreUsuario", usuario.Nombre ?? "");
             HttpContext.Session.SetInt32("IdUsuario", usuario.IdUsuario);
             HttpContext.Session.SetInt32("Rol", usuario.IdRol?? 0);
-
+            
+            if (usuario.IdRol == 3 && usuario.IdEmpresa != null)
+            {
+                HttpContext.Session.SetInt32("IdEmpresa", usuario.IdEmpresa.Value);
+            }
             // Redirigir por rol
             if (usuario.IdRol == 1) return RedirectToAction("Index", "Dashboard"); // Admin
             if (usuario.IdRol == 2) return RedirectToAction("Index", "Dashboard");    // Técnico
 
             return RedirectToAction("Index", "Home");
+        }
+        [HttpPost]
+        public IActionResult KeepAlive()
+        {
+            // Refresca la sesión en el servidor guardando algo
+            HttpContext.Session.SetString("LastPing", DateTime.Now.ToString("O"));
+
+            return Ok(new { success = true, message = "Sesión renovada" });
         }
 
         [HttpGet]

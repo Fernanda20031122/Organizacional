@@ -1,0 +1,21 @@
+@model Organizacional.Models.Empresa
+
+@{
+    ViewData["Title"] = "Eliminar Empresa";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-danger">Eliminar Empresa</h2>
+
+    <div class="alert alert-warning">
+        <h5>¿Está seguro que desea eliminar esta empresa?</h5>
+        <p><strong>@Model.Nombre</strong></p>
+    </div>
+
+    <form asp-action="Eliminar" method="post">
+        <input type="hidden" asp-for="IdEmpresa" />
+
+        <button type="submit" class="btn btn-danger">Eliminar</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
+    </form>
+</div>

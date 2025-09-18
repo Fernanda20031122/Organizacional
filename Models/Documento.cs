@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Organizacional.Models;
 
 public partial class Documento
 {
     public int IdDocumento { get; set; }
+    public int? IdEmpresa { get; set; }   // 👈 puede ser null, por si no todos tienen empresa
+
+    [ForeignKey("IdEmpresa")]
+    public Empresa IdEmpresaNavigation { get; set; }  // 👈 relación explícita
 
     public string TipoDocumento { get; set; } = null!;
 
@@ -23,8 +28,6 @@ public partial class Documento
     public int? IdUsuarioSubio { get; set; }
 
     public bool? Asignada { get; set; }
-
-    public string? EmpresaDestino { get; set; }
 
     public bool? Suministro { get; set; }
 
@@ -45,11 +48,10 @@ public partial class Documento
 
     public virtual Usuario? IdUsuarioSubioNavigation { get; set; }
     public virtual ICollection<HerramientaRecogida> HerramientaRecogida { get; set; }
-    
+
     public ICollection<MaterialesPendiente> MaterialesPendientes { get; set; }
     public virtual ICollection<Mantenimiento> Mantenimientos { get; set; } = new List<Mantenimiento>();
 
-    public virtual ICollection<SedesDocumento> SedesDocumentos { get; set; } = new List<SedesDocumento>();
-
     public virtual ICollection<Tarea> Tareas { get; set; } = new List<Tarea>();
+
 }
