@@ -22,8 +22,21 @@ namespace Organizacional.Controllers
         // GET: Documentos
         public async Task<IActionResult> Index()
         {
-            var organizacionalContext = _context.Documentos.Include(d => d.IdUsuarioSubioNavigation);
-            return View(await organizacionalContext.ToListAsync());
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
+            IQueryable<Documento> query = _context.Documentos
+                .Include(d => d.IdUsuarioSubioNavigation)
+                .Include(d => d.IdEmpresaNavigation); // 👈 incluir empresa
+
+            // 🔒 Si es cliente, solo documentos de su empresa
+            if (rol == 3 && idEmpresaSesion.HasValue)
+            {
+                query = query.Where(d => d.IdEmpresa == idEmpresaSesion.Value);
+            }
+
+            var lista = await query.ToListAsync();
+            return View(lista);
         }
 
         // GET: Documentos/Details/5

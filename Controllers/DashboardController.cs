@@ -21,19 +21,25 @@ namespace Organizacional.Controllers
         {
             var idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
             var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresa = HttpContext.Session.GetInt32("IdEmpresa");
 
             if (idUsuario == 0 || rol == null)
             {
                 return RedirectToAction("Login", "Auth");
             }
 
-            var documentos = await _context.Documentos
+            var documentosQuery = _context.Documentos
                 .Include(d => d.IdUsuarioSubioNavigation)
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
-                .Where(d => !d.Tareas.Any() || d.Tareas.All(t => t.Estado != "Completado" && t.Estado != "Cancelado"))
                 .Include(d => d.IdEmpresaNavigation) // 👈 incluir la empresa
-                .ToListAsync();
+                .Where(d => !d.Tareas.Any() || d.Tareas.All(t => t.Estado != "Completado" && t.Estado != "Cancelado"));
+            if (rol == 3 && idEmpresa.HasValue) // Si es cliente, filtrar por su empresa
+            {
+                documentosQuery = documentosQuery.Where(d => d.IdEmpresa == idEmpresa.Value);
+            }
+            
+            var documentos = await documentosQuery.ToListAsync();
 
             var modelo = documentos.Select(d => new DashboardItemViewModel
             {
@@ -95,6 +101,9 @@ namespace Organizacional.Controllers
         [HttpGet]
         public async Task<IActionResult> Crear()
         {
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresa = HttpContext.Session.GetInt32("IdEmpresa");
+
             var tecnicos = await _context.Usuarios
                 .Where(u => u.IdRol == 2 && u.Estado == "activo")
                 .ToListAsync();
@@ -103,9 +112,22 @@ namespace Organizacional.Controllers
                 .Where(u => u.IdRol == 1 && u.Estado == "activo")
                 .ToListAsync();
 
-            var empresas = await _context.Empresas
-                .OrderBy(e => e.Nombre)
-                .ToListAsync();
+            List<Empresa> empresas;
+
+            if (rol == 3 && idEmpresa.HasValue)
+            {
+                // Cliente → solo su empresa
+                empresas = await _context.Empresas
+                    .Where(e => e.IdEmpresa == idEmpresa.Value)
+                    .ToListAsync();
+            }
+            else
+            {
+                // Admin/otros → todas
+                empresas = await _context.Empresas
+                    .OrderBy(e => e.Nombre)
+                    .ToListAsync();
+            }
 
             ViewBag.Tecnicos = new SelectList(tecnicos, "IdUsuario", "Nombre");
             ViewBag.Colaboradores = new SelectList(colaboradores, "IdUsuario", "Nombre");
@@ -116,8 +138,18 @@ namespace Organizacional.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Crear(DocumentoFormViewModel modelo) // Vista de Subir Pendiente
+        public async Task<IActionResult> Crear(DocumentoFormViewModel modelo)
         {
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+            var idUsuarioSubio = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+
+            // Validación: cliente no puede forzar otra empresa
+            if (rol == 3 && idEmpresaSesion.HasValue)
+            {
+                modelo.IdEmpresa = idEmpresaSesion.Value;
+            }
+
             // Validar tipo de documento
             if (string.IsNullOrEmpty(modelo.TipoDocumento) ||
                 !(new[] { "Contrato", "Orden", "Otro" }.Contains(modelo.TipoDocumento)))
@@ -125,7 +157,7 @@ namespace Organizacional.Controllers
                 ModelState.AddModelError("TipoDocumento", "Tipo de documento inválido.");
             }
 
-            // Validar fechas según el tipo de documento
+            // Validar fechas
             if (modelo.TipoDocumento == "Contrato")
             {
                 if (modelo.FechaInicio == null || modelo.FechaFin == null)
@@ -141,28 +173,35 @@ namespace Organizacional.Controllers
                 }
             }
 
-            // NO validamos archivos como obligatorios
-
-            // Si hay errores, recargar ViewBag y volver a la vista
+            // Si hay errores, recargar ViewBag y volver
             if (!ModelState.IsValid)
             {
                 var tecnicos = await _context.Usuarios.Where(u => u.IdRol == 2 && u.Estado == "activo").ToListAsync();
                 var colaboradores = await _context.Usuarios.Where(u => u.IdRol == 1 && u.Estado == "activo").ToListAsync();
-                var empresas = await _context.Empresas.ToListAsync();
+
+                List<Empresa> empresas;
+                if (rol == 3 && idEmpresaSesion.HasValue)
+                {
+                    empresas = await _context.Empresas.Where(e => e.IdEmpresa == idEmpresaSesion.Value).ToListAsync();
+                }
+                else
+                {
+                    empresas = await _context.Empresas.ToListAsync();
+                }
+
                 ViewBag.Tecnicos = new SelectList(tecnicos, "IdUsuario", "Nombre");
                 ViewBag.Colaboradores = new SelectList(colaboradores, "IdUsuario", "Nombre");
                 ViewBag.Empresas = new SelectList(empresas, "IdEmpresa", "Nombre");
+
                 return View(modelo);
             }
-
-            var idUsuarioSubio = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
 
             var documento = new Documento
             {
                 TipoDocumento = modelo.TipoDocumento,
                 NumeroDocumento = modelo.NumeroDocumento,
                 Descripcion = modelo.Descripcion,
-                IdEmpresa = modelo.IdEmpresa,
+                IdEmpresa = modelo.IdEmpresa, // ya validado según rol
                 Suministro = modelo.Suministro,
                 Instalacion = modelo.Instalacion,
                 Mantenimiento = modelo.Mantenimiento,
@@ -172,7 +211,7 @@ namespace Organizacional.Controllers
                 IdUsuarioSubio = idUsuarioSubio
             };
 
-            // Asignar fechas según tipo
+            // Asignar fechas
             if (modelo.TipoDocumento == "Contrato")
             {
                 documento.FechaInicio = modelo.FechaInicio;
@@ -183,7 +222,7 @@ namespace Organizacional.Controllers
                 documento.FechaGeneracion = modelo.FechaGeneracion;
             }
 
-            // Guardar archivo principal si existe
+            // Guardar archivos
             if (modelo.ArchivoPdf != null && modelo.ArchivoPdf.Length > 0)
             {
                 var nombreArchivo = Guid.NewGuid() + Path.GetExtension(modelo.ArchivoPdf.FileName);
@@ -193,7 +232,6 @@ namespace Organizacional.Controllers
                 documento.ArchivoUrl = "/uploads/" + nombreArchivo;
             }
 
-            // Guardar archivo cotización si existe
             if (modelo.ArchivoCotizacionPdf != null && modelo.ArchivoCotizacionPdf.Length > 0)
             {
                 var nombreCot = Guid.NewGuid() + Path.GetExtension(modelo.ArchivoCotizacionPdf.FileName);
@@ -241,9 +279,11 @@ namespace Organizacional.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
         public async Task<IActionResult> Detalle(int id) // Vista Detalle del Pendiente
         {
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
             var documento = await _context.Documentos
                 .Include(d => d.IdUsuarioSubioNavigation)
                 .Include(d => d.MaterialesPendientes)
@@ -259,6 +299,12 @@ namespace Organizacional.Controllers
 
             if (documento == null)
                 return NotFound();
+                
+            // 🔒 Validación: clientes solo acceden a documentos de su empresa
+            if (rol == 3 && idEmpresaSesion.HasValue && documento.IdEmpresa != idEmpresaSesion.Value)
+            {
+                return Forbid(); // o RedirectToAction("Index") si prefieres
+            }
 
             var viewModel = new DetalleDocumentoViewModel
             {
@@ -274,19 +320,24 @@ namespace Organizacional.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CambiarEstadoTarea(int idTarea, string nuevoEstado) // Cambiar el estado del pendiente
+        public async Task<IActionResult> CambiarEstadoTarea(int idTarea, string nuevoEstado)
         {
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
             var tarea = await _context.Tareas
                 .Include(t => t.IdDocumentoNavigation)
                 .FirstOrDefaultAsync(t => t.IdTarea == idTarea);
 
-            if (tarea == null)
-                return NotFound();
+            if (tarea == null) return NotFound();
 
-            // Cambiar estado de la tarea
+            // 🔒 Validación
+            if (rol == 3 && tarea.IdDocumentoNavigation.IdEmpresa != idEmpresaSesion)
+                return Forbid();
+
+            // ✅ Lógica normal
             tarea.Estado = nuevoEstado;
 
-            // ✅ Si el estado es "Cancelado" o "Completado", guardamos la fecha de cierre en el documento
             if (nuevoEstado.Equals("Cancelado", StringComparison.OrdinalIgnoreCase) ||
                 nuevoEstado.Equals("Completado", StringComparison.OrdinalIgnoreCase))
             {
@@ -302,9 +353,16 @@ namespace Organizacional.Controllers
         [HttpGet]
         public async Task<IActionResult> AsignarTecnico(int id)
         {
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
             var documento = await _context.Documentos.FindAsync(id);
             if (documento == null)
                 return NotFound();
+
+            // 🔒 Validación: si es cliente solo puede ver documentos de su empresa
+            if (rol == 3 && documento.IdEmpresa != idEmpresaSesion)
+                return Forbid();
 
             var tecnicos = await _context.Usuarios
                 .Where(u => u.IdRol == 2)
@@ -324,9 +382,16 @@ namespace Organizacional.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AsignarTecnico(int idDocumento, int idTecnico) // Asignar Tecnico
         {
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
             var documento = await _context.Documentos.FindAsync(idDocumento);
             if (documento == null)
                 return NotFound();
+
+            // 🔒 Validación: si es cliente solo puede modificar documentos de su empresa
+            if (rol == 3 && documento.IdEmpresa != idEmpresaSesion)
+                return Forbid();
 
             // Buscar si ya existe una tarea asociada al documento
             var tarea = await _context.Tareas
@@ -358,9 +423,16 @@ namespace Organizacional.Controllers
         [HttpGet]
         public async Task<IActionResult> AsignarColaborador(int id)
         {
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
             var documento = await _context.Documentos.FindAsync(id);
             if (documento == null)
                 return NotFound();
+
+            // 🔒 Validación: si es cliente solo puede ver documentos de su empresa
+            if (rol == 3 && documento.IdEmpresa != idEmpresaSesion)
+                return Forbid();
 
             var colaboradores = await _context.Usuarios
                 .Where(u => u.IdRol == 1)
@@ -380,11 +452,19 @@ namespace Organizacional.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AsignarColaborador(int idDocumento, int idColaborador) // Asignar Colaborador
         {
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
             var documento = await _context.Documentos
                 .Include(d => d.Tareas)
                 .FirstOrDefaultAsync(d => d.IdDocumento == idDocumento);
 
-            if (documento == null) return NotFound();
+            if (documento == null)
+                return NotFound();
+
+            // 🔒 Validación: si es cliente solo puede modificar documentos de su empresa
+            if (rol == 3 && documento.IdEmpresa != idEmpresaSesion)
+                return Forbid();
 
             var tarea = documento.Tareas.FirstOrDefault() ?? new Tarea { IdDocumento = idDocumento };
 
@@ -398,9 +478,13 @@ namespace Organizacional.Controllers
             return RedirectToAction("Detalle", new { id = idDocumento });
         }
 
+
         [HttpGet]
         public async Task<IActionResult> RegistrarMantenimiento(int id)
         {
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
             var mantenimiento = await _context.Mantenimientos
                 .Include(m => m.IdDocumentoNavigation)
                 .FirstOrDefaultAsync(m => m.Id == id);
@@ -408,14 +492,29 @@ namespace Organizacional.Controllers
             if (mantenimiento == null)
                 return NotFound();
 
+            // 🔒 Validación: si es cliente solo puede ver mantenimientos de su empresa
+            if (rol == 3 && mantenimiento.IdDocumentoNavigation.IdEmpresa != idEmpresaSesion)
+                return Forbid();
+
             return View(mantenimiento);
         }
 
         [HttpPost]
         public async Task<IActionResult> RegistrarMantenimientoPost(int id, DateTime? proxima) // Fechas de los Mantenimientos
         {
-            var mantenimiento = await _context.Mantenimientos.FindAsync(id);
-            if (mantenimiento == null) return NotFound();
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
+            var mantenimiento = await _context.Mantenimientos
+                .Include(m => m.IdDocumentoNavigation)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (mantenimiento == null)
+                return NotFound();
+
+            // 🔒 Validación: si es cliente solo puede modificar mantenimientos de su empresa
+            if (rol == 3 && mantenimiento.IdDocumentoNavigation.IdEmpresa != idEmpresaSesion)
+                return Forbid();
 
             // Deserializar las fechas existentes
             var fechas = string.IsNullOrEmpty(mantenimiento.FechasRealizadasJson)
@@ -437,20 +536,25 @@ namespace Organizacional.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Obtener el documento relacionado
-            var documento = await _context.Documentos
-                .Include(d => d.Tareas)
-                .FirstOrDefaultAsync(d => d.IdDocumento == mantenimiento.IdDocumento);
-                
             return RedirectToAction("Detalle", new { id = mantenimiento.IdDocumento });
         }
 
         [HttpPost]
         public async Task<IActionResult> ActualizarProximoMantenimiento(int id, DateOnly? nuevaFecha) // Proxima Fecha
         {
-            var mantenimiento = await _context.Mantenimientos.FindAsync(id);
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
+            var mantenimiento = await _context.Mantenimientos
+                .Include(m => m.IdDocumentoNavigation)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
             if (mantenimiento == null)
                 return NotFound();
+
+            // 🔒 Validación: si es cliente solo puede modificar mantenimientos de su empresa
+            if (rol == 3 && mantenimiento.IdDocumentoNavigation.IdEmpresa != idEmpresaSesion)
+                return Forbid();
 
             mantenimiento.ProximoMantenimiento = nuevaFecha;
             await _context.SaveChangesAsync();
@@ -461,13 +565,23 @@ namespace Organizacional.Controllers
         [HttpGet]
         public async Task<IActionResult> Historial()
         {
-            var pendientes = await _context.Documentos
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
+            var query = _context.Documentos
                 .Include(d => d.IdUsuarioSubioNavigation)
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
-                .Where(d => d.Tareas.Any(t => t.Estado == "Completado" || t.Estado == "Cancelado"))
-                .Include(d => d.IdEmpresaNavigation) // 👈 incluir la empresa
-                .ToListAsync();
+                .Include(d => d.IdEmpresaNavigation)
+                .Where(d => d.Tareas.Any(t => t.Estado == "Completado" || t.Estado == "Cancelado"));
+
+            // 🔒 Si es cliente, limitar a documentos de su empresa
+            if (rol == 3 && idEmpresaSesion.HasValue)
+            {
+                query = query.Where(d => d.IdEmpresa == idEmpresaSesion.Value);
+            }
+
+            var pendientes = await query.ToListAsync();
 
             var modelo = pendientes.Select(d => new DashboardItemViewModel
             {
@@ -487,7 +601,9 @@ namespace Organizacional.Controllers
                 TecnicoAsignado = d.Tareas.FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado",
                 EmpresaNombre = d.IdEmpresaNavigation?.Nombre ?? "Sin empresa",
             }).ToList();
+
             return View(modelo);
         }
+
     }
 }

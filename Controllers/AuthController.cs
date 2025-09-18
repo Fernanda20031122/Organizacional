@@ -59,8 +59,9 @@ namespace Organizacional.Controllers
             // Redirigir por rol
             if (usuario.IdRol == 1) return RedirectToAction("Index", "Dashboard"); // Admin
             if (usuario.IdRol == 2) return RedirectToAction("Index", "Dashboard");    // Técnico
+            if (usuario.IdRol == 3) return RedirectToAction("Index", "Dashboard"); // Cliente Empresa
 
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Dashboard"); // Usuario normal
         }
         [HttpPost]
         public IActionResult KeepAlive()

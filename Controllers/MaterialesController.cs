@@ -21,34 +21,41 @@ namespace Organizacional.Controllers
         // ✅ LISTA DE MATERIALES PENDIENTES DE ENTREGA
         public async Task<IActionResult> Index()
         {
-            var pendientesDb = await _context.Documentos
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
+
+            IQueryable<Documento> query = _context.Documentos
                 .Where(d => d.MaterialesPendientes.Any(m => !m.MaterialEntregado))
                 .Include(d => d.IdEmpresaNavigation)
                 .Include(d => d.MaterialesPendientes)
                 .Include(d => d.Tareas)
-                    .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
-                .ToListAsync();
+                    .ThenInclude(t => t.IdTecnicoAsignadoNavigation);
+
+            // 🔒 Filtrar si es cliente
+            if (rol == 3 && idEmpresaSesion.HasValue)
+            {
+                query = query.Where(d => d.IdEmpresa == idEmpresaSesion.Value);
+            }
+
+            var pendientesDb = await query.ToListAsync();
+
             var pendientes = pendientesDb.Select(d => new MaterialesPorEntregarViewModel
-                {
-                    IdPendiente = d.IdDocumento,
-                    NumeroDocumento = d.NumeroDocumento,
-                    EmpresaNombre = d.IdEmpresaNavigation?.Nombre ?? "Sin empresa",
-                    FechaRegistro = (d.MaterialesPendientes != null && d.MaterialesPendientes.Any())
-                        ? d.MaterialesPendientes
-                            .OrderBy(m => m.FechaRegistro)
-                            .Select(m => m.FechaRegistro)
-                            .FirstOrDefault()
-                        : (DateTime?)null,
-                    TecnicoAsignado = (d.Suministro.GetValueOrDefault() || d.Instalacion.GetValueOrDefault() || d.Mantenimiento.GetValueOrDefault() || d.Soporte.GetValueOrDefault())
+            {
+                IdPendiente = d.IdDocumento,
+                NumeroDocumento = d.NumeroDocumento,
+                EmpresaNombre = d.IdEmpresaNavigation?.Nombre ?? "Sin empresa",
+                FechaRegistro = (d.MaterialesPendientes != null && d.MaterialesPendientes.Any())
+                    ? d.MaterialesPendientes.OrderBy(m => m.FechaRegistro).Select(m => m.FechaRegistro).FirstOrDefault()
+                    : (DateTime?)null,
+                TecnicoAsignado = (d.Suministro.GetValueOrDefault() || d.Instalacion.GetValueOrDefault() || d.Mantenimiento.GetValueOrDefault() || d.Soporte.GetValueOrDefault())
                     ? d.Tareas.FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado"
                     : "N/A",
-                    Tipo = d.TipoDocumento ?? "sin tipo",
-                        
-                    Suministro = d.Suministro ?? false,
-                    Instalacion = d.Instalacion ?? false,
-                    Mantenimiento = d.Mantenimiento ?? false,
-                    Soporte = d.Soporte ?? false
-                }).ToList();
+                Tipo = d.TipoDocumento ?? "sin tipo",
+                Suministro = d.Suministro ?? false,
+                Instalacion = d.Instalacion ?? false,
+                Mantenimiento = d.Mantenimiento ?? false,
+                Soporte = d.Soporte ?? false
+            }).ToList();
 
             return View(pendientes);
         }
