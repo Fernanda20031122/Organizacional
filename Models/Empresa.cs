@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Organizacional.Models
 {
+    [Table("empresas")]
     public class Empresa
     {
         [Key]
