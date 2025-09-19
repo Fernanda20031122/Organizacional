@@ -3,8 +3,33 @@
 @{
     ViewData["Title"] = "Editar Empresa";
 }
+@{
+    var idUsuario = Context.Session.GetInt32("IdUsuario");
+    var rolUsuario = Context.Session.GetInt32("Rol");
+}
 
-<div class="container mt-4">
+@if (idUsuario == null || rolUsuario == null)
+{
+    <script>window.location.href = '/Auth/Login';</script>
+}
+
+@await Html.PartialAsync("_Sidebar")
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"]</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/Historial.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Dashboard.css" asp-append-version="true" />
+</head>
+<body>
+        <!-- Contenido principal -->
+
+<div class="col-md-9 col-lg-10 p-4 contenido" style="margin-left: 240px;">
     <h2 class="mb-4">Editar Empresa</h2>
 
     <form asp-action="Editar" method="post" class="card p-4 shadow-sm">
@@ -20,3 +45,5 @@
         <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
     </form>
 </div>
+</body>
+</html>
