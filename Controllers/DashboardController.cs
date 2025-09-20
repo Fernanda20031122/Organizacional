@@ -17,7 +17,7 @@ namespace Organizacional.Controllers
         {
             _context = context;
         }
-        public async Task<IActionResult> Index() // Vista de Dashboard Principal
+        public async Task<IActionResult> Index(string? empresa, string? estado, string? tipo) // Vista de Dashboard Principal
         {
             var idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
             var rol = HttpContext.Session.GetInt32("Rol");
@@ -34,11 +34,36 @@ namespace Organizacional.Controllers
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
                 .Include(d => d.IdEmpresaNavigation) // 👈 incluir la empresa
                 .Where(d => !d.Tareas.Any() || d.Tareas.All(t => t.Estado != "Completado" && t.Estado != "Cancelado"));
-            if (rol == 3 && idEmpresa.HasValue) // Si es cliente, filtrar por su empresa
+
+            // 🔒 Si es cliente, limitar solo a su empresa
+            if (rol == 3 && idEmpresa.HasValue)
             {
                 documentosQuery = documentosQuery.Where(d => d.IdEmpresa == idEmpresa.Value);
             }
-            
+
+            // 🔍 Filtro por empresa (solo si NO es cliente)
+            if (rol != 3 && !string.IsNullOrEmpty(empresa))
+            {
+                documentosQuery = documentosQuery.Where(d => d.IdEmpresaNavigation.Nombre == empresa);
+            }
+
+            // 🔍 Filtro por estado
+            if (!string.IsNullOrEmpty(estado))
+            {
+                documentosQuery = documentosQuery.Where(d => d.Tareas.Any(t => t.Estado == estado));
+            }
+
+            // 🔍 Filtro por tipo de servicio
+            if (!string.IsNullOrEmpty(tipo))
+            {
+                documentosQuery = documentosQuery.Where(d =>
+                    (tipo == "Suministro" && d.Suministro == true) ||
+                    (tipo == "Instalacion" && d.Instalacion == true) ||
+                    (tipo == "Mantenimiento" && d.Mantenimiento == true) ||
+                    (tipo == "Soporte" && d.Soporte == true)
+                );
+            }
+
             var documentos = await documentosQuery.ToListAsync();
 
             var modelo = documentos.Select(d => new DashboardItemViewModel
@@ -94,6 +119,36 @@ namespace Organizacional.Controllers
                 .ThenByDescending(d => d.Tipo == "Contrato" ? d.PorcentajeProgreso : 0) // contratos por progreso
                 .ThenByDescending(d => d.Tipo != "Contrato" ? d.DiasTranscurridos : 0) // órdenes por días transcurridos
                 .ToList();
+
+            // 📌 Preparar ViewBag para el filtro de empresas
+            if (rol != 3)
+            {
+                ViewBag.Empresas = await _context.Empresas
+                    .Select(e => e.Nombre)
+                    .OrderBy(n => n)
+                    .ToListAsync();
+            }
+            else
+            {
+                ViewBag.Empresas = new List<string>(); // vacío para clientes
+            }
+
+            // Empresa seleccionada
+            ViewBag.EmpresaSeleccionada = empresa;
+
+            // Flag para la vista (cliente/admin)
+            ViewBag.EsCliente = (rol == 3);
+
+            // Si es cliente, obtener el nombre de su empresa
+            if (rol == 3 && idEmpresa.HasValue && string.IsNullOrEmpty(empresa))
+            {
+                var empresaCliente = await _context.Empresas
+                    .Where(e => e.IdEmpresa == idEmpresa.Value)
+                    .Select(e => e.Nombre)
+                    .FirstOrDefaultAsync();
+
+                ViewBag.EmpresaSeleccionada = empresaCliente;
+            }
 
             return View(modelo);
         }
@@ -563,7 +618,7 @@ namespace Organizacional.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Historial()
+        public async Task<IActionResult> Historial(string? empresa, string? estado, string? tipo)
         {
             var rol = HttpContext.Session.GetInt32("Rol");
             var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
@@ -573,7 +628,10 @@ namespace Organizacional.Controllers
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation)
                 .Include(d => d.IdEmpresaNavigation)
-                .Where(d => d.Tareas.Any(t => t.Estado == "Completado" || t.Estado == "Cancelado"));
+                .AsQueryable();
+
+            // Solo documentos con tareas cerradas (Completado o Cancelado)
+            query = query.Where(d => d.Tareas.Any(t => t.Estado == "Completado" || t.Estado == "Cancelado"));
 
             // 🔒 Si es cliente, limitar a documentos de su empresa
             if (rol == 3 && idEmpresaSesion.HasValue)
@@ -581,9 +639,37 @@ namespace Organizacional.Controllers
                 query = query.Where(d => d.IdEmpresa == idEmpresaSesion.Value);
             }
 
-            var pendientes = await query.ToListAsync();
+            // 🔍 Filtro por empresa (solo si NO es cliente)
+            if (rol != 3 && !string.IsNullOrEmpty(empresa))
+            {
+                query = query.Where(d => d.IdEmpresaNavigation.Nombre == empresa);
+            }
 
-            var modelo = pendientes.Select(d => new DashboardItemViewModel
+            // 🔍 Filtro por estado (solo completado/cancelado)
+            if (!string.IsNullOrEmpty(estado))
+            {
+                query = query.Where(d => d.Tareas.Any(t => t.Estado == estado));
+            }
+
+            // 🔍 Filtro por tipo de servicio
+            if (!string.IsNullOrEmpty(tipo))
+            {
+                query = query.Where(d =>
+                    (tipo == "Suministro" && d.Suministro == true) ||
+                    (tipo == "Instalacion" && d.Instalacion == true) ||
+                    (tipo == "Mantenimiento" && d.Mantenimiento == true) ||
+                    (tipo == "Soporte" && d.Soporte == true)
+                );
+            }
+
+            // 👇 Ordenar primero por FechaCierre (últimos arriba)
+            query = query
+                .OrderByDescending(d => d.FechaCierre)
+                .ThenByDescending(d => d.FechaSubida);
+
+            var documentos = await query.ToListAsync();
+
+            var modelo = documentos.Select(d => new DashboardItemViewModel
             {
                 Estado = d.Tareas.FirstOrDefault()?.Estado ?? "Pendiente",
                 FechaInicio = d.FechaInicio?.ToDateTime(TimeOnly.MinValue),
@@ -598,12 +684,43 @@ namespace Organizacional.Controllers
                 Instalacion = d.Instalacion ?? false,
                 Mantenimiento = d.Mantenimiento ?? false,
                 Soporte = d.Soporte ?? false,
-                TecnicoAsignado = d.Tareas.FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado",
+                TecnicoAsignado = d.Tareas
+                    .FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)
+                    ?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado",
                 EmpresaNombre = d.IdEmpresaNavigation?.Nombre ?? "Sin empresa",
             }).ToList();
 
+            // 📌 Preparar ViewBag para filtros
+            if (rol != 3)
+            {
+                ViewBag.Empresas = await _context.Empresas
+                    .Select(e => e.Nombre)
+                    .OrderBy(n => n)
+                    .ToListAsync();
+            }
+            else
+            {
+                ViewBag.Empresas = new List<string>();
+            }
+
+            // Empresa seleccionada
+            ViewBag.EmpresaSeleccionada = empresa;
+
+            // Flag para la vista
+            ViewBag.EsCliente = (rol == 3);
+
+            // Si es cliente, obtener el nombre de su empresa
+            if (rol == 3 && idEmpresaSesion.HasValue && string.IsNullOrEmpty(empresa))
+            {
+                var empresaCliente = await _context.Empresas
+                    .Where(e => e.IdEmpresa == idEmpresaSesion.Value)
+                    .Select(e => e.Nombre)
+                    .FirstOrDefaultAsync();
+
+                ViewBag.EmpresaSeleccionada = empresaCliente;
+            }
+
             return View(modelo);
         }
-
     }
 }
