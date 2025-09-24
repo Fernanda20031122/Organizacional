@@ -33,65 +33,129 @@
         <div class="col-md-9 col-lg-10 p-4 contenido" style="margin-left: 240px;">
             <h2>Herramientas por Recoger</h2>
 
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Tipo de Documento</th>
-                        <th>Tipo de Servicio</th>
-                        <th>Empresa</th>
-                        <th>Fecha de registro</th>
-                        <th>Dejada por</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <!-- Filtros -->
+            <form method="get" class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Empresa</label>
+
+                    @if (ViewBag.EsCliente == true) 
+                    {
+                        <!-- Cliente: solo su empresa -->
+                        <input type="text" class="form-control" value="@ViewBag.EmpresaSeleccionada" readonly />
+                        <input type="hidden" name="empresa" value="@ViewBag.EmpresaSeleccionada" />
+                    }
+                    else
+                    {
+                        <!-- Admin/otros: lista desplegable -->
+                        <select name="empresa" class="form-select">
+                            <option value="">-- Todas --</option>
+                            @foreach (string emp in (ViewBag.Empresas as List<string> ?? new List<string>()))
+                            {
+                                if (ViewBag.EmpresaSeleccionada == emp)
+                                {
+                                    <option value="@emp" selected="selected">@emp</option>
+                                }
+                                else
+                                {
+                                    <option value="@emp">@emp</option>
+                                }
+                            }
+                        </select>
+                    }
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="">-- Todos --</option>
+                        <option value="Pendiente" selected="@(Context.Request.Query["estado"] == "Pendiente")">Pendiente</option>
+                        <option value="En_Proceso" selected="@(Context.Request.Query["estado"] == "En_Proceso")">En Proceso</option>
+                        <option value="Completado" selected="@(Context.Request.Query["estado"] == "Completado")">Completado</option>
+                        <option value="Cancelado" selected="@(Context.Request.Query["estado"] == "Cancelado")">Cancelado</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Tipo de Servicio</label>
+                    <select name="tipo" class="form-select">
+                        <option value="">-- Todos --</option>
+                        <option value="Suministro" selected="@(Context.Request.Query["tipo"] == "Suministro")">Suministro</option>
+                        <option value="Instalacion" selected="@(Context.Request.Query["tipo"] == "Instalacion")">Instalación</option>
+                        <option value="Mantenimiento" selected="@(Context.Request.Query["tipo"] == "Mantenimiento")">Mantenimiento</option>
+                        <option value="Soporte" selected="@(Context.Request.Query["tipo"] == "Soporte")">Soporte</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                </div>
+            </form>
+
+            <!-- 📋 TABLA en pantallas grandes -->
+            <div class="d-none d-md-block">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Tipo de Documento</th>
+                            <th>Tipo de Servicio</th>
+                            <th>Empresa</th>
+                            <th>Fecha de registro</th>
+                            <th>Dejada por</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.NumeroDocumento</td>
+                            <td>@item.Tipo</td>
+                            <td>
+                                @if (item.Suministro) { <i class="bi bi-box-seam text-primary me-1" title="Suministro"></i> }
+                                @if (item.Instalacion) { <i class="bi bi-tools text-success me-1" title="Instalación"></i> }
+                                @if (item.Mantenimiento) { <i class="bi bi-wrench-adjustable text-warning me-1" title="Mantenimiento"></i> }
+                                @if (item.Soporte) { <i class="bi bi-laptop text-dark me-1" title="Soporte"></i> }
+                            </td>
+                            <td>@item.EmpresaNombre</td>
+                            <td>@(item.FechaRegistro?.ToString("dd/MM/yyyy") ?? "--")</td>
+                            <td>@item.UltimoUsuario</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="verHerramientas(@item.Id)">Ver herramientas</button>
+                                <a href="@Url.Action("Detalle", "Dashboard", new { id = item.Id })" class="btn btn-success btn-sm mt-2">Abrir Detalle</a>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 📱 TARJETAS en móviles -->
+            <div class="d-block d-md-none mt-3">
                 @foreach (var item in Model)
                 {
-                    <tr>
-                        <td>@item.NumeroDocumento</td>
-                        <td>@item.Tipo</td>
-                        <td>
-                            @if (item.Suministro)
-                            {
-                                <i class="bi bi-box-seam text-primary me-1" title="Suministro"></i>
-                            }
-                            @if (item.Instalacion)
-                            {
-                                <i class="bi bi-tools text-success me-1" title="Instalación"></i>
-                            }
-                            @if (item.Mantenimiento)
-                            {
-                                <i class="bi bi-wrench-adjustable text-warning me-1" title="Mantenimiento"></i>
-                            }
-                            @if (item.Soporte)
-                            {
-                                <i class="bi bi-laptop text-dark me-1" title="Soporte"></i>
-                            }
-                        </td>
-                        <td>@item.EmpresaNombre</td>
-                        <td>
-                            @(item.FechaRegistro.HasValue
-                                ? item.FechaRegistro.Value.ToString("dd/MM/yyyy")
-                                : "--")
-                        </td>
-                        <td>@item.UltimoUsuario</td>
-                        <td>
-                            <button class="btn btn-primary btn-sm"
-                                    onclick="verHerramientas(@item.Id)">
-                                Ver herramientas
-                            </button>
-
-                            @* Si deseas que abra el detalle general del documento, usa Dashboard *@
-                            <a href="@Url.Action("Detalle", "Dashboard", new { id = item.Id })"
-                               class="btn btn-success btn-sm mt-2">
-                                Abrir Detalle
-                            </a>
-                        </td>
-                    </tr>
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-body">
+                            <h5>#@item.NumeroDocumento - @item.EmpresaNombre</h5>
+                            <p><strong>Tipo Doc:</strong> @item.Tipo</p>
+                            <p><strong>Servicio:</strong>
+                                @if (item.Suministro) { <i class="bi bi-box-seam text-primary me-1"></i> }
+                                @if (item.Instalacion) { <i class="bi bi-tools text-success me-1"></i> }
+                                @if (item.Mantenimiento) { <i class="bi bi-wrench-adjustable text-warning me-1"></i> }
+                                @if (item.Soporte) { <i class="bi bi-laptop text-dark me-1"></i> }
+                            </p>
+                            <p><strong>Fecha:</strong> @(item.FechaRegistro?.ToString("dd/MM/yyyy") ?? "--")</p>
+                            <p><strong>Dejada por:</strong> @item.UltimoUsuario</p>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary btn-sm" onclick="verHerramientas(@item.Id)">Ver</button>
+                                <a href="@Url.Action("Detalle", "Dashboard", new { id = item.Id })" class="btn btn-success btn-sm">Detalle</a>
+                            </div>
+                        </div>
+                    </div>
                 }
-                </tbody>
-            </table>
+            </div>
         </div>
     </div>
 
@@ -112,7 +176,7 @@
                 });
         }
 
-        // Hamburguesa responsive (igual a Dashboard/Materiales)
+        // Hamburguesa responsive
         document.addEventListener('DOMContentLoaded', function () {
             const btn = document.getElementById('hamburgerBtn');
             const sidebar = document.querySelector('.sidebar');

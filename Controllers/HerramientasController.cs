@@ -17,11 +17,11 @@ namespace Organizacional.Controllers
             _context = context;
         }
 
-        // ✅ LISTA DE HERRAMIENTAS PENDIENTES DE RECOGER
-        public async Task<IActionResult> Index()
+        // ✅ LISTA DE HERRAMIENTAS PENDIENTES DE RECOGER CON FILTROS
+        public async Task<IActionResult> Index(string? empresa, string? estado, string? tipo)
         {
             var rol = HttpContext.Session.GetInt32("Rol");
-            var idEmpresa = HttpContext.Session.GetInt32("IdEmpresa");  
+            var idEmpresa = HttpContext.Session.GetInt32("IdEmpresa");
 
             IQueryable<Documento> query = _context.Documentos
                 .Where(d => d.HerramientaRecogida.Any(h => !h.Recogida))
@@ -30,10 +30,34 @@ namespace Organizacional.Controllers
                     .ThenInclude(h => h.IdUsuarioNavigation)
                 .Include(d => d.Tareas)
                     .ThenInclude(t => t.IdTecnicoAsignadoNavigation);
-            // 👇 Si es Cliente (Rol = 3), solo ve documentos de su empresa
+
+            // 🔒 Filtrar si es cliente
             if (rol == 3 && idEmpresa.HasValue)
             {
                 query = query.Where(d => d.IdEmpresa == idEmpresa.Value);
+            }
+
+            // 📌 Filtro por empresa (solo si no es cliente)
+            if (rol != 3 && !string.IsNullOrEmpty(empresa))
+            {
+                query = query.Where(d => d.IdEmpresaNavigation.Nombre == empresa);
+            }
+
+            // 📌 Filtro por estado (usa estado de las tareas relacionadas)
+            if (!string.IsNullOrEmpty(estado))
+            {
+                query = query.Where(d => d.Tareas.Any(t => t.Estado == estado));
+            }
+
+            // 📌 Filtro por tipo de servicio
+            if (!string.IsNullOrEmpty(tipo))
+            {
+                query = query.Where(d =>
+                    (tipo == "Suministro" && d.Suministro == true) ||
+                    (tipo == "Instalacion" && d.Instalacion == true) ||
+                    (tipo == "Mantenimiento" && d.Mantenimiento == true) ||
+                    (tipo == "Soporte" && d.Soporte == true)
+                );
             }
 
             var pendientesDb = await query.ToListAsync();
@@ -44,16 +68,10 @@ namespace Organizacional.Controllers
                 NumeroDocumento = d.NumeroDocumento,
                 EmpresaNombre = d.IdEmpresaNavigation?.Nombre ?? "Sin empresa",
                 FechaRegistro = (d.HerramientaRecogida != null && d.HerramientaRecogida.Any())
-                    ? d.HerramientaRecogida
-                        .OrderByDescending(h => h.FechaRegistro) // 👈 última
-                        .Select(h => h.FechaRegistro)
-                        .FirstOrDefault()
+                    ? d.HerramientaRecogida.OrderByDescending(h => h.FechaRegistro).Select(h => h.FechaRegistro).FirstOrDefault()
                     : (DateTime?)null,
                 UltimoUsuario = (d.HerramientaRecogida != null && d.HerramientaRecogida.Any())
-                    ? d.HerramientaRecogida
-                        .OrderByDescending(h => h.FechaRegistro) // 👈 última
-                        .Select(h => h.IdUsuarioNavigation?.Nombre)
-                        .FirstOrDefault()
+                    ? d.HerramientaRecogida.OrderByDescending(h => h.FechaRegistro).Select(h => h.IdUsuarioNavigation?.Nombre).FirstOrDefault()
                     : "N/A",
                 TecnicoAsignado = (d.Suministro.GetValueOrDefault() || d.Instalacion.GetValueOrDefault() || d.Mantenimiento.GetValueOrDefault() || d.Soporte.GetValueOrDefault())
                     ? d.Tareas.FirstOrDefault(t => t.IdTecnicoAsignadoNavigation != null)?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado"
@@ -64,6 +82,10 @@ namespace Organizacional.Controllers
                 Mantenimiento = d.Mantenimiento ?? false,
                 Soporte = d.Soporte ?? false
             }).ToList();
+
+            // 📌 Enviar lista de empresas al ViewBag para el filtro
+            ViewBag.Empresas = await _context.Empresas.Select(e => e.Nombre).ToListAsync();
+            ViewBag.EmpresaSeleccionada = empresa;
 
             return View(pendientes);
         }

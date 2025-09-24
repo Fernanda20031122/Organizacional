@@ -18,8 +18,8 @@ namespace Organizacional.Controllers
             _context = context;
         }
 
-        // ✅ LISTA DE MATERIALES PENDIENTES DE ENTREGA
-        public async Task<IActionResult> Index()
+        // ✅ LISTA DE MATERIALES PENDIENTES DE ENTREGA (con filtros)
+        public async Task<IActionResult> Index(string? empresa, string? estado, string? tipo)
         {
             var rol = HttpContext.Session.GetInt32("Rol");
             var idEmpresaSesion = HttpContext.Session.GetInt32("IdEmpresa");
@@ -35,6 +35,29 @@ namespace Organizacional.Controllers
             if (rol == 3 && idEmpresaSesion.HasValue)
             {
                 query = query.Where(d => d.IdEmpresa == idEmpresaSesion.Value);
+            }
+
+            // 🔍 Filtro por empresa (solo si NO es cliente)
+            if (rol != 3 && !string.IsNullOrEmpty(empresa))
+            {
+                query = query.Where(d => d.IdEmpresaNavigation.Nombre == empresa);
+            }
+
+            // 🔍 Filtro por estado
+            if (!string.IsNullOrEmpty(estado))
+            {
+                query = query.Where(d => d.Tareas.Any(t => t.Estado == estado));
+            }
+
+            // 🔍 Filtro por tipo de servicio
+            if (!string.IsNullOrEmpty(tipo))
+            {
+                query = query.Where(d =>
+                    (tipo == "Suministro" && d.Suministro == true) ||
+                    (tipo == "Instalacion" && d.Instalacion == true) ||
+                    (tipo == "Mantenimiento" && d.Mantenimiento == true) ||
+                    (tipo == "Soporte" && d.Soporte == true)
+                );
             }
 
             var pendientesDb = await query.ToListAsync();
@@ -56,6 +79,33 @@ namespace Organizacional.Controllers
                 Mantenimiento = d.Mantenimiento ?? false,
                 Soporte = d.Soporte ?? false
             }).ToList();
+
+            // 📌 Cargar lista de empresas para el filtro
+            if (rol != 3)
+            {
+                ViewBag.Empresas = await _context.Empresas
+                    .Select(e => e.Nombre)
+                    .OrderBy(n => n)
+                    .ToListAsync();
+            }
+            else
+            {
+                ViewBag.Empresas = new List<string>();
+            }
+
+            ViewBag.EmpresaSeleccionada = empresa;
+            ViewBag.EsCliente = (rol == 3);
+
+            // Si es cliente → auto-seleccionar su empresa
+            if (rol == 3 && idEmpresaSesion.HasValue && string.IsNullOrEmpty(empresa))
+            {
+                var empresaCliente = await _context.Empresas
+                    .Where(e => e.IdEmpresa == idEmpresaSesion.Value)
+                    .Select(e => e.Nombre)
+                    .FirstOrDefaultAsync();
+
+                ViewBag.EmpresaSeleccionada = empresaCliente;
+            }
 
             return View(pendientes);
         }
