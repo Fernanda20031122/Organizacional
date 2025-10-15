@@ -13,7 +13,7 @@ namespace Organizacional.Models.ViewModels
         public string? NumeroDocumento { get; set; }
 
         public string? Descripcion { get; set; }
-
+        public DateTime? FechaEjecucion { get; set; }
         public DateOnly? FechaGeneracion { get; set; }
 
         public DateOnly? FechaInicio { get; set; }

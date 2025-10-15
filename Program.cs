@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Organizacional.Data;
+using Organizacional.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,11 @@ builder.Services.AddDbContext<OrganizacionalContext>(optionsBuilder =>
         builder.Configuration.GetConnectionString("conexion"),
         Microsoft.EntityFrameworkCore.ServerVersion.Parse("10.4.32-mariadb")
     ));
+// 🟢 Agrega la configuración del servicio de correo aquí:
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
+
+builder.Services.AddTransient<EmailService>();
 
 var app = builder.Build();
 

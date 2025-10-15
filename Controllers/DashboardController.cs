@@ -69,6 +69,7 @@ namespace Organizacional.Controllers
             var modelo = documentos.Select(d => new DashboardItemViewModel
             {
                 Estado = d.Tareas.FirstOrDefault()?.Estado ?? "Pendiente",
+                FechaEjecucion = d.FechaEjecucion,
                 FechaInicio = d.FechaInicio?.ToDateTime(TimeOnly.MinValue),
                 FechaFin = d.FechaFin?.ToDateTime(TimeOnly.MinValue),
                 IdDocumento = d.IdDocumento,
@@ -374,6 +375,29 @@ namespace Organizacional.Controllers
             return View(viewModel);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> ActualizarFechaEjecucion(int idDocumento, DateTime? fechaEjecucion)
+        {
+            if (fechaEjecucion == null)
+            {
+                TempData["Error"] = "Debes seleccionar una fecha válida.";
+                return RedirectToAction("Detalle", new { id = idDocumento });
+            }
+
+            var documento = await _context.Documentos.FindAsync(idDocumento);
+            if (documento == null)
+            {
+                TempData["Error"] = "Documento no encontrado.";
+                return RedirectToAction("Dashboard");
+            }
+
+            documento.FechaEjecucion = fechaEjecucion;
+            await _context.SaveChangesAsync();
+
+            TempData["Exito"] = "Fecha de ejecución actualizada correctamente.";
+            return RedirectToAction("Detalle", new { id = idDocumento });
+        }
+    
         [HttpPost]
         public async Task<IActionResult> CambiarEstadoTarea(int idTarea, string nuevoEstado)
         {

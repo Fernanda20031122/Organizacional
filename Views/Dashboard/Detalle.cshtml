@@ -11,6 +11,14 @@
 }
 
 <h2>Detalle del Pendiente</h2>
+@if (TempData["Exito"] != null)
+{
+    <div class="alert alert-success">@TempData["Exito"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
 
 <div class="card p-3 mb-4 shadow">
     <div class="card-header bg-secondary text-white">
@@ -19,9 +27,8 @@
     <p><strong>Tipo:</strong> @Model.Documento.TipoDocumento</p>
     <p><strong>Número:</strong> @Model.Documento.NumeroDocumento</p>
     <p><strong>Descripción:</strong> @Model.Documento.Descripcion</p>
-<p><strong>Empresa:</strong> @Model.EmpresaNombre</p>
-<p><strong>Subido por:</strong> @Model.Documento.IdUsuarioSubioNavigation?.Nombre</p>
-
+    <p><strong>Empresa:</strong> @Model.EmpresaNombre</p>
+    <p><strong>Subido por:</strong> @Model.Documento.IdUsuarioSubioNavigation?.Nombre</p>
     <p>
         <strong>Fecha de subida:</strong>
         @(Model.Documento.FechaSubida.HasValue
@@ -79,6 +86,36 @@
                     </a>
                 }
             </div>
+        </div>
+    </div>
+    
+        <!-- FECHA DE EJECUCIÓN -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Fecha de Ejecución</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="ActualizarFechaEjecucion" asp-controller="Dashboard" method="post" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="idDocumento" value="@Model.Documento.IdDocumento" />
+
+                <input type="date"
+                    name="fechaEjecucion"
+                    class="form-control w-auto"
+                    value="@(Model.Documento.FechaEjecucion?.ToString("yyyy-MM-dd") ?? "")" />
+
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-save"></i> Guardar Fecha
+                </button>
+            </form>
+
+            <p class="mt-2 text-muted">
+                Fecha actual:
+                <strong>
+                    @(Model.Documento.FechaEjecucion.HasValue
+                        ? Model.Documento.FechaEjecucion.Value.ToString("dd/MM/yyyy")
+                        : "Sin asignar")
+                </strong>
+            </p>
         </div>
     </div>
     @if (tieneMantenimientos)

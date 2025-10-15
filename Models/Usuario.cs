@@ -17,6 +17,12 @@ public partial class Usuario
     public int? IdRol { get; set; }
 
     public string? Estado { get; set; }
+    
+    [Column("token_expira")]
+    public DateTime? TokenExpira { get; set; }
+
+    [Column("token_recuperacion")]
+    public string? TokenRecuperacion { get; set; }
 
     // 🔹 Relación con Empresa (nuevo)public int? IdEmpresa { get; set; }
 

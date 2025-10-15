@@ -11,6 +11,8 @@ namespace Organizacional.Models.ViewModels
         public string Estado { get; set; } = "";
         public string SubidoPor { get; set; } = "";
         public string EmpresaNombre { get; set; } = "";
+        public DateTime? FechaEjecucion { get; set; }
+
         public DateTime FechaSubida { get; set; }
         public DateTime? FechaCierre { get; set; }
         public int DiasTranscurridos { get; set; }

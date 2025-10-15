@@ -1,0 +1,41 @@
+@model Organizacional.Models.ViewModels.CambiarContrasenaViewModel
+
+@{
+    ViewData["Title"] = "Restablecer Contraseña";
+}
+
+<h2 class="mb-3">Restablecer Contraseña</h2>
+<p>Ingresa tu nueva contraseña para continuar.</p>
+
+<form asp-action="RestablecerContrasena" method="post">
+    <input type="hidden" asp-for="IdUsuario" />
+
+    <div class="mb-3">
+        <label asp-for="NuevaContrasena" class="form-label"></label>
+        <input asp-for="NuevaContrasena" class="form-control" />
+        <span asp-validation-for="NuevaContrasena" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ConfirmarContrasena" class="form-label"></label>
+        <input asp-for="ConfirmarContrasena" class="form-control" />
+        <span asp-validation-for="ConfirmarContrasena" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-success">Guardar nueva contraseña</button>
+</form>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger mt-3">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <p>@error.ErrorMessage</p>
+        }
+    </div>
+}
+
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-info mt-3">@TempData["Mensaje"]</div>
+}

@@ -19,6 +19,7 @@ public partial class Documento
     public string? Descripcion { get; set; }
 
     public DateOnly? FechaGeneracion { get; set; }
+    public DateTime? FechaEjecucion { get; set; }
 
     public DateOnly? FechaSubida { get; set; }
     public DateTime? FechaCierre { get; set; }

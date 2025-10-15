@@ -103,6 +103,7 @@
                             <th>Subido por</th>
                             <th>Días Transcurridos</th>
                             <th>Técnico</th>
+                            <th>Fecha Ejecucion</th>
                             <th>Progreso</th>
                             <th>Acciones</th>
                         </tr>
@@ -165,6 +166,11 @@
                                 {
                                     <span class="badge bg-primary ms-1">Asignado a ti</span>
                                 }
+                            </td>
+                            <td>
+                            @(item.FechaEjecucion.HasValue 
+                                ? item.FechaEjecucion.Value.ToString("dd/MM/yyyy") 
+                                : "Sin asignar")
                             </td>
                             <td>
                             @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)
@@ -241,6 +247,11 @@
                         {
                             <span class="badge bg-primary ms-1">Asignado a ti</span>
                         }
+                        </p>
+                        <p><strong>Fecha Ejecución:</strong> 
+                        @(item.FechaEjecucion.HasValue 
+                            ? item.FechaEjecucion.Value.ToString("dd/MM/yyyy") 
+                            : "Sin asignar")
                         </p>
                         <p><strong>Progreso:</strong>
                         @if (item.Tipo == "Contrato" && item.DiasTotalesContrato > 0)

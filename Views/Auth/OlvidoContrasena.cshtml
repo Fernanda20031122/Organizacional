@@ -1,17 +1,27 @@
-﻿@model string
-@{
+﻿@{
     ViewData["Title"] = "¿Olvidaste tu contraseña?";
 }
 
-<h2>¿Olvidaste tu contraseña?</h2>
+<h2 class="mb-3">¿Olvidaste tu contraseña?</h2>
+<p>Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p>
 
 <form asp-action="OlvidoContrasena" method="post">
     <div class="mb-3">
         <label for="correo" class="form-label">Correo electrónico</label>
-        <input type="email" name="correo" class="form-control" required />
+        <input type="email" name="correo" class="form-control" required placeholder="ejemplo@correo.com" />
     </div>
-    <button type="submit" class="btn btn-primary">Enviar</button>
+    <button type="submit" class="btn btn-primary">Enviar enlace</button>
 </form>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger mt-3">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <p>@error.ErrorMessage</p>
+        }
+    </div>
+}
 
 @if (TempData["Mensaje"] != null)
 {
