@@ -69,7 +69,7 @@ namespace Organizacional.Controllers
             HttpContext.Session.SetInt32("Rol",    rol);
             HttpContext.Session.SetInt32("IdRol",  rol);
 
-            HttpContext.Session.SetString("Nombre", usuario.Nombre ?? "");
+            HttpContext.Session.SetString("NombreUsuario", usuario.Nombre ?? "");
             HttpContext.Session.SetString("Correo", usuario.Correo ?? "");
 
             if (usuario.IdEmpresa.HasValue)
