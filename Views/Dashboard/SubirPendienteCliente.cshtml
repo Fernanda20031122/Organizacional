@@ -1,0 +1,73 @@
+@model Organizacional.Models.ViewModels.SubirPendienteClienteViewModel
+@{
+    ViewData["Title"] = "Subir nuevo pendiente";
+    Layout = "_Layout";
+}
+
+<h2>Subir nuevo pendiente</h2>
+
+<form asp-action="CrearCliente" method="post">
+    @Html.AntiForgeryToken()
+
+    @* Empresa (si vas a fijarla desde sesión, muestra hidden) *@
+    @if (Model.Empresas != null && Model.Empresas.Any())
+    {
+        <div class="mb-3">
+            <label class="form-label">Empresa</label>
+            <select asp-for="IdEmpresa" asp-items="Model.Empresas" class="form-select">
+                <option value="">-- Seleccione una empresa --</option>
+            </select>
+            <span asp-validation-for="IdEmpresa" class="text-danger"></span>
+        </div>
+    }
+    else if (Model.IdEmpresa.HasValue)
+    {
+        <input type="hidden" asp-for="IdEmpresa" />
+    }
+
+    <div class="mb-3">
+        <label asp-for="NombreCompleto" class="form-label"></label>
+        <input asp-for="NombreCompleto" class="form-control" />
+        <span asp-validation-for="NombreCompleto" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="NumeroContacto" class="form-label"></label>
+        <input asp-for="NumeroContacto" class="form-control" />
+        <span asp-validation-for="NumeroContacto" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Ubicacion" class="form-label"></label>
+        <input asp-for="Ubicacion" class="form-control" placeholder="Almacén general, oficinas postcosecha, etc." />
+        <span asp-validation-for="Ubicacion" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Descripcion" class="form-label"></label>
+        <textarea asp-for="Descripcion" class="form-control" rows="5"></textarea>
+        <span asp-validation-for="Descripcion" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label d-block">Tipo</label>
+        <div class="form-check">
+            <input class="form-check-input" asp-for="Instalacion" type="checkbox" id="chkInst" />
+            <label class="form-check-label" for="chkInst">Instalación</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" asp-for="Mantenimiento" type="checkbox" id="chkMant" />
+            <label class="form-check-label" for="chkMant">Mantenimiento</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" asp-for="Soporte" type="checkbox" id="chkSop" />
+            <label class="form-check-label" for="chkSop">Soporte</label>
+        </div>
+        @* Suministro eliminado *@
+    </div>
+
+    <button type="submit" class="btn btn-primary">Subir</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -86,13 +86,27 @@
         resetSessionTimers();
     </script>
 </div>
-    <!-- Botón flotante de regreso al Dashboard -->
-    <button type="button" 
-            class="btn btn-primary btn-lg rounded-circle shadow position-fixed"
-            style="bottom: 20px; right: 20px; z-index: 1000;" 
-            data-bs-toggle="tooltip" title="Volver atrás"
-            onclick="if(document.referrer) { history.back(); } else { window.location.href='@Url.Action("Index","Dashboard")'; }">
-        <i class="bi bi-arrow-left"></i>
-    </button>
+    @{
+        var controller = (ViewContext.RouteData.Values["controller"] as string ?? "").ToLowerInvariant();
+        var action     = (ViewContext.RouteData.Values["action"] as string ?? "").ToLowerInvariant();
+
+        // No mostrar en Auth (Login, TwoFactor, Forgot, etc.)
+        var hideOnAuth = controller == "auth";
+
+        // Opcional: tampoco mostrar cuando ya estás en el Dashboard/Index
+        var isDashboardHome = controller == "dashboard" && action == "index";
+        var isDashboardHistorial = controller == "dashboard" && action == "historial";
+    }
+
+    @if (!hideOnAuth && !isDashboardHome && !isDashboardHistorial)
+    {
+        <!-- Botón flotante: ir siempre al Dashboard -->
+        <a href="@Url.Action("Index","Dashboard")"
+        class="btn btn-primary btn-lg rounded-circle shadow position-fixed"
+        style="bottom:20px; right:20px; z-index:1000;"
+        data-bs-toggle="tooltip" title="Ir al Dashboard">
+            <i class="bi bi-arrow-left"></i> @* si prefieres, usa bi-house *@
+        </a>
+    }
 </body>
 </html>

@@ -1,14 +1,27 @@
 ﻿@model Organizacional.Models.ViewModels.LoginViewModel
-
+@{
+    ViewBag.Title = "Ingresar";
+}
 @{
     ViewData["Title"] = "Iniciar Sesión";
+}
+@{
+    var msg = TempData["Mensaje"] as string;
+}
+@if (!string.IsNullOrEmpty(msg))
+{
+    <div class="alert alert-success">@msg</div>
 }
 
 <div class="container d-flex justify-content-center align-items-center vh-100">
     <div class="col-12 col-sm-8 col-md-6 col-lg-4">
         <h2 class="text-center mb-4">Iniciar Sesión</h2>
 
-        <form asp-action="Login" method="post" class="card p-4 shadow-sm">
+        <form action="/Auth/Login" method="post" class="card p-4 shadow-sm">
+            @Html.AntiForgeryToken()
+            <partial name="_ValidationScriptsPartial" />
+            <div asp-validation-summary="All" class="text-danger mb-2"></div>
+            
             <div class="mb-3">
                 <label asp-for="Correo" class="form-label">Correo</label>
                 <input asp-for="Correo" class="form-control" />
@@ -20,6 +33,8 @@
                 <input asp-for="Contrasena" class="form-control" type="password" />
                 <span asp-validation-for="Contrasena" class="text-danger"></span>
             </div>
+
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
 
             <button type="submit" class="btn btn-primary w-100">Ingresar</button>
         </form>

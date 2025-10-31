@@ -6,6 +6,9 @@ namespace Organizacional.Models.ViewModels
     {
         public int IdUsuario { get; set; }
 
+        // lo usamos para validar el enlace de invitación
+        public string Token { get; set; } = string.Empty;
+
         [EmailAddress(ErrorMessage = "Debes ingresar un correo válido.")]
         public string Correo { get; set; } = string.Empty;
 

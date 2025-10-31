@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Organizacional.Data;
 using Organizacional.Models;
 using Organizacional.Models.ViewModels;
+using Organizacional.Services;           // <-- AÑADE
+using System.Security.Cryptography;      // <-- AÑADE
+using System.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +17,12 @@ namespace Organizacional.Controllers
     public class UsuariosController : Controller
     {
         private readonly OrganizacionalContext _context;
+        private readonly EmailService _email;      // <-- AÑADE
 
-        public UsuariosController(OrganizacionalContext context)
+        public UsuariosController(OrganizacionalContext context, EmailService email)
         {
             _context = context;
+            _email = email;
         }
 
         [HttpGet]
@@ -47,44 +52,60 @@ namespace Organizacional.Controllers
         {
             if (!ModelState.IsValid)
             {
-                // volver a cargar selects si hay error
-                model.Roles = _context.Roles.Select(r => new SelectListItem
-                {
-                    Value = r.IdRol.ToString(),
-                    Text = r.NombreRol
-                }).ToList();
-
-                model.Empresas = _context.Empresas.Select(e => new SelectListItem
-                {
-                    Value = e.IdEmpresa.ToString(),
-                    Text = e.Nombre
-                }).ToList();
-
+                model.Roles = _context.Roles
+                    .Select(r => new SelectListItem { Value = r.IdRol.ToString(), Text = r.NombreRol })
+                    .ToList();
+                model.Empresas = _context.Empresas
+                    .Select(e => new SelectListItem { Value = e.IdEmpresa.ToString(), Text = e.Nombre })
+                    .ToList();
                 return View(model);
             }
 
             if (await _context.Usuarios.AnyAsync(u => u.Correo == model.Correo))
             {
                 ModelState.AddModelError("Correo", "Ya existe un usuario con este correo.");
+                model.Roles = _context.Roles
+                    .Select(r => new SelectListItem { Value = r.IdRol.ToString(), Text = r.NombreRol })
+                    .ToList();
+                model.Empresas = _context.Empresas
+                    .Select(e => new SelectListItem { Value = e.IdEmpresa.ToString(), Text = e.Nombre })
+                    .ToList();
                 return View(model);
             }
 
-            var nuevoUsuario = new Usuario
+            // ======= AQUÍ creamos el usuario y lo dejamos en 'usuario' (scope correcto) =======
+            var usuario = new Usuario
             {
                 Nombre = model.Nombre,
                 Correo = model.Correo,
-                Contrasena = model.Contrasena, // 🔐 aquí deberías hashear
+                Contrasena = null,                // sin contraseña; la define con el link
                 IdRol = model.IdRol,
-                IdEmpresa = model.IdEmpresa,   // 👈 se asigna el FK, no el nombre
+                IdEmpresa = model.IdEmpresa,
                 Estado = "activo",
                 DebeCambiarContrasena = true,
-                FechaCreacion = DateTime.Now
+                FechaCreacion = DateTime.UtcNow
             };
 
-            _context.Usuarios.Add(nuevoUsuario);
+            _context.Usuarios.Add(usuario);
+            await _context.SaveChangesAsync();    // necesitamos IdUsuario
+
+            // Token de invitación (24h)
+            var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+            usuario.TokenRecuperacion = token;
+            usuario.TokenExpira = DateTime.UtcNow.AddHours(24);
             await _context.SaveChangesAsync();
 
-            TempData["Mensaje"] = "Usuario creado correctamente.";
+            // Link absoluto (mejor usa Url.Action para no concatenar a mano)
+            var link = Url.Action(
+                action: "CambiarContrasenaInicial",
+                controller: "Auth",
+                values: new { id = usuario.IdUsuario, token },
+                protocol: Request.Scheme
+            )!;
+
+            await _email.SendInviteAsync(usuario.Correo!, usuario.Nombre ?? "", link);
+
+            TempData["Mensaje"] = "Usuario creado. Se envió un correo de invitación para definir la contraseña.";
             return RedirectToAction("Index");
         }
 

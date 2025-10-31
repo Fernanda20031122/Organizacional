@@ -1,0 +1,75 @@
+@model IEnumerable<Organizacional.Models.MaintenanceSchedule>
+@{
+    var esCliente = (ViewBag.EsCliente as bool?) ?? false;
+    var docId = (int)ViewBag.DocId;
+}
+
+@if (Model == null || !Model.Any())
+{
+  <div class="alert alert-info mb-2">Este pendiente no tiene mantenimientos aún.</div>
+}
+else
+{
+  <div class="card mb-3">
+    <div class="card-header">Mantenimientos programados</div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0 align-middle">
+        <thead>
+          <tr>
+            <th style="width:64px">#</th>
+            <th>Fecha programada</th>
+            <th style="width:140px">¿Completado?</th>
+            <th>Fecha real</th>
+          </tr>
+        </thead>
+        <tbody>
+        @foreach (var m in Model)
+        {
+          <tr data-id="@m.Id">
+            <td>@m.Seq</td>
+
+            <!-- FECHA PROGRAMADA + GUARDAR -->
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <input type="date"
+                       class="form-control form-control-sm planned"
+                       value="@(m.PlannedDate.HasValue ? m.PlannedDate.Value.ToString("yyyy-MM-dd") : "")"
+                       @(esCliente ? "disabled" : "") />
+                @if (!esCliente)
+                {
+                  <button type="button"
+                          class="btn btn-sm btn-outline-primary"
+                          onclick="savePlanned(this, @docId)">Guardar</button>
+                }
+              </div>
+            </td>
+
+            <!-- BADGE COMPLETADO -->
+            <td>
+              @(m.IsCompleted
+                ? Html.Raw("<span class='badge bg-success'>Sí</span>")
+                : Html.Raw("<span class='badge bg-secondary'>No</span>"))
+            </td>
+
+            <!-- FECHA REAL + COMPLETAR -->
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <input type="datetime-local"
+                       class="form-control form-control-sm completedAt"
+                       value="@(m.CompletedAt.HasValue ? m.CompletedAt.Value.ToString("yyyy-MM-ddTHH:mm") : "")"
+                       @(esCliente ? "disabled" : "") />
+                @if (!esCliente)
+                {
+                  <button type="button"
+                          class="btn btn-sm btn-success"
+                          onclick="completeMaint(this, @docId)">Completar</button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

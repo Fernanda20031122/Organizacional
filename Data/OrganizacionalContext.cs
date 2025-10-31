@@ -27,6 +27,8 @@ public partial class OrganizacionalContext : DbContext
 
     public virtual DbSet<Mantenimiento> Mantenimientos { get; set; }
 
+    public virtual DbSet<MaintenanceSchedule> MaintenanceSchedules { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Tarea> Tareas { get; set; }
@@ -174,6 +176,28 @@ public partial class OrganizacionalContext : DbContext
                 .HasConstraintName("mantenimientos_ibfk_1");
         });
 
+        modelBuilder.Entity<MaintenanceSchedule>(e =>
+        {
+            e.ToTable("maintenance_schedules");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.DocumentoId);
+            e.HasIndex(x => x.PlannedDate);
+
+            e.Property(x => x.DocumentoId).HasColumnName("documento_id");
+            e.Property(x => x.Seq).HasColumnName("seq");
+            e.Property(x => x.PlannedDate).HasColumnName("planned_date");
+            e.Property(x => x.IsCompleted).HasColumnName("is_completed");
+            e.Property(x => x.CompletedAt).HasColumnName("completed_at");
+            e.Property(x => x.Notified7d).HasColumnName("notified_7d");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+
+            e.HasOne(x => x.Document)
+            .WithMany(d => d.MaintenanceSchedules)
+            .HasForeignKey(x => x.DocumentoId)
+            .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.IdRol).HasName("PRIMARY");
@@ -260,6 +284,8 @@ public partial class OrganizacionalContext : DbContext
                 .HasForeignKey(d => d.IdRol)
                 .HasConstraintName("usuarios_ibfk_1");
         });
+
+        base.OnModelCreating(modelBuilder);
 
         OnModelCreatingPartial(modelBuilder);
     }

@@ -33,12 +33,6 @@
         </div>
 
         <div class="mb-3">
-            <label asp-for="Contrasena" class="form-label"></label>
-            <input asp-for="Contrasena" type="password" class="form-control" />
-            <span asp-validation-for="Contrasena" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
             <label asp-for="IdRol" class="form-label">Rol</label>
             <select asp-for="IdRol" class="form-control" asp-items="Model.Roles" id="rolSelect">
                 <option value="">-- Seleccione un rol --</option>

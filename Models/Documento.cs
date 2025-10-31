@@ -55,4 +55,6 @@ public partial class Documento
 
     public virtual ICollection<Tarea> Tareas { get; set; } = new List<Tarea>();
 
+    public virtual ICollection<MaintenanceSchedule> MaintenanceSchedules { get; set; } = new List<MaintenanceSchedule>();
+
 }

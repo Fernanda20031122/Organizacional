@@ -3,6 +3,10 @@
 @using System.Security.Claims
 
 @{
+    var esCliente = (ViewBag.EsCliente as bool?) ?? false;
+}
+
+@{
     ViewData["Title"] = "Detalle del Pendiente";
     Layout = "_Layout";
     var tecnico = Model.Tareas.FirstOrDefault()?.IdTecnicoAsignadoNavigation?.Nombre ?? "No asignado";
@@ -27,7 +31,7 @@
     <p><strong>Tipo:</strong> @Model.Documento.TipoDocumento</p>
     <p><strong>Número:</strong> @Model.Documento.NumeroDocumento</p>
     <p><strong>Descripción:</strong> @Model.Documento.Descripcion</p>
-    <p><strong>Empresa:</strong> @Model.EmpresaNombre</p>
+    <p><strong>Finca:</strong> @Model.EmpresaNombre</p>
     <p><strong>Subido por:</strong> @Model.Documento.IdUsuarioSubioNavigation?.Nombre</p>
     <p>
         <strong>Fecha de subida:</strong>
@@ -73,17 +77,20 @@
             <p><strong>Colaborador asignado:</strong> @colaborador</p>
 
             <div class="d-flex gap-3 mt-3">
-                @if (tecnico == "No asignado" && (Model.Documento.Instalacion == true || Model.Documento.Mantenimiento == true))
+                @if (!esCliente)
                 {
-                    <a asp-action="AsignarTecnico" asp-route-id="@Model.Documento.IdDocumento" class="btn btn-warning">
-                        <i class="bi bi-person-gear"></i> Asignar Técnico
-                    </a>
-                }
-                @if (colaborador == "No asignado")
-                {
-                    <a asp-action="AsignarColaborador" asp-route-id="@Model.Documento.IdDocumento" class="btn btn-primary">
-                        <i class="bi bi-person-plus"></i> Asignar Colaborador
-                    </a>
+                    @if (tecnico == "No asignado" && (Model.Documento.Instalacion == true || Model.Documento.Mantenimiento == true || Model.Documento.Soporte == true))
+                    {
+                        <a asp-action="AsignarTecnico" asp-route-id="@Model.Documento.IdDocumento" class="btn btn-warning">
+                            <i class="bi bi-person-gear"></i> Asignar Técnico
+                        </a>
+                    }
+                    @if (colaborador == "No asignado")
+                    {
+                        <a asp-action="AsignarColaborador" asp-route-id="@Model.Documento.IdDocumento" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Asignar Colaborador
+                        </a>
+                    }
                 }
             </div>
         </div>
@@ -95,18 +102,21 @@
             <h5 class="mb-0">Fecha de Ejecución</h5>
         </div>
         <div class="card-body">
-            <form asp-action="ActualizarFechaEjecucion" asp-controller="Dashboard" method="post" class="d-flex align-items-center gap-2">
-                <input type="hidden" name="idDocumento" value="@Model.Documento.IdDocumento" />
+            @if (!esCliente)
+            {
+                <form asp-action="ActualizarFechaEjecucion" asp-controller="Dashboard" method="post" class="d-flex align-items-center gap-2">
+                    <input type="hidden" name="idDocumento" value="@Model.Documento.IdDocumento" />
 
-                <input type="date"
-                    name="fechaEjecucion"
-                    class="form-control w-auto"
-                    value="@(Model.Documento.FechaEjecucion?.ToString("yyyy-MM-dd") ?? "")" />
+                    <input type="date"
+                        name="fechaEjecucion"
+                        class="form-control w-auto"
+                        value="@(Model.Documento.FechaEjecucion?.ToString("yyyy-MM-dd") ?? "")" />
 
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-save"></i> Guardar Fecha
-                </button>
-            </form>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-save"></i> Guardar Fecha
+                    </button>
+                </form>
+            }
 
             <p class="mt-2 text-muted">
                 Fecha actual:
@@ -118,118 +128,92 @@
             </p>
         </div>
     </div>
-    @if (tieneMantenimientos)
+
+    <!-- Mantenimientos -->
+@if (tieneMantenimientos)
 {
-        <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0">Mantenimientos</h5>
-        </div>
-
-    <!-- Tabla visible solo en pantallas medianas en adelante -->
-    <div class="table-responsive d-none d-md-block">
-        <table class="table table-bordered align-middle text-center">
-            <thead>
-                <tr>
-                    <th>Total Programados</th>
-                    <th>Realizados</th>
-                    <th>Fechas Realizadas</th>
-                    <th>Próximo</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var m in Model.Documento.Mantenimientos)
-                {
-                    <tr>
-                        <td>@m.TotalMantenimientos</td>
-                        <td>@m.MantenimientoRealizado</td>
-                        <td>
-                            @{
-                                var fechas = string.IsNullOrEmpty(m.FechasRealizadasJson)
-                                    ? new List<string>()
-                                    : JsonSerializer.Deserialize<List<string>>(m.FechasRealizadasJson);
-                            }
-
-                            @if (fechas.Any())
-                            {
-                                <ul class="mb-0">
-                                    @foreach (var fecha in fechas)
-                                    {
-                                        <li>@DateTime.Parse(fecha).ToString("dd/MM/yyyy")</li>
-                                    }
-                                </ul>
-                            }
-                            else
-                            {
-                                <span>No hay registros</span>
-                            }
-                        </td>
-                        <td>
-                            <form asp-action="ActualizarProximoMantenimiento" asp-controller="Dashboard" method="post" class="d-flex align-items-center gap-2">
-                                <input type="hidden" name="id" value="@m.Id" />
-                                <input type="date" name="nuevaFecha" class="form-control form-control-sm"
-                                       value="@(m.ProximoMantenimiento?.ToString("yyyy-MM-dd") ?? "")" />
-                                <button type="submit" class="btn btn-success btn-sm">Guardar</button>
-                            </form>
-                        </td>
-                        <td>
-                            <form asp-action="RegistrarMantenimientoPost" asp-route-id="@m.Id" method="post">
-                                <button type="submit" class="btn btn-primary mt-3">Registrar mantenimiento de hoy</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <div id="mantenimientos-panel" data-doc="@Model.Documento.IdDocumento">
+    <div class="text-muted py-2">Cargando mantenimientos…</div>
     </div>
 
-    <!-- Tarjetas visibles solo en móviles -->
-    <div class="d-block d-md-none">
-        @foreach (var m in Model.Documento.Mantenimientos)
-        {
-            <div class="card mb-3 shadow-sm">
-                <div class="card-body">
-                    <p><strong>Total Programados:</strong> @m.TotalMantenimientos</p>
-                    <p><strong>Realizados:</strong> @m.MantenimientoRealizado</p>
-                    <p><strong>Fechas Realizadas:</strong>
-                        @{
-                            var fechas = string.IsNullOrEmpty(m.FechasRealizadasJson)
-                                ? new List<string>()
-                                : JsonSerializer.Deserialize<List<string>>(m.FechasRealizadasJson);
-                        }
+    @section Scripts{
+    <script>
+    (() => {
+    const root = document.getElementById('mantenimientos-panel');
+    const id = root.dataset.doc;
+    const url = '@Url.Action("Mantenimientos","Dashboard")' + '/' + id;
 
-                        @if (fechas.Any())
-                        {
-                            <ul class="mb-0">
-                                @foreach (var fecha in fechas)
-                                {
-                                    <li>@DateTime.Parse(fecha).ToString("dd/MM/yyyy")</li>
-                                }
-                            </ul>
-                        }
-                        else
-                        {
-                            <span>No hay registros</span>
-                        }
-                    </p>
-
-                    <form asp-action="ActualizarProximoMantenimiento" asp-controller="Dashboard" method="post" class="mb-2">
-                        <input type="hidden" name="id" value="@m.Id" />
-                        <label><strong>Próximo mantenimiento:</strong></label>
-                        <div class="d-flex gap-2">
-                            <input type="date" name="nuevaFecha" class="form-control form-control-sm"
-                                   value="@(m.ProximoMantenimiento?.ToString("yyyy-MM-dd") ?? "")" />
-                            <button type="submit" class="btn btn-success btn-sm">Guardar</button>
-                        </div>
-                    </form>
-
-                    <form asp-action="RegistrarMantenimientoPost" asp-route-id="@m.Id" method="post">
-                        <button type="submit" class="btn btn-primary btn-sm w-100">Registrar mantenimiento de hoy</button>
-                    </form>
-                </div>
-            </div>
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(async r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        root.innerHTML = await r.text();
+        })
+        .catch(err => {
+        root.innerHTML = `<div class="alert alert-warning">No se pudo cargar los mantenimientos (${err.message}).</div>`;
+        });
+    })();
+    
+    // Si en algún momento volvemos a aceptar "dd/mm/yyyy", estas funciones lo convierten.
+    function toIsoDate(s){
+        if(!s) return "";
+        if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // ya es type=date
+        const parts = s.trim().split(/[\/\-]/);
+        if(parts.length === 3){
+        const [d,m,y] = parts;
+        return `${y.padStart(4,'0')}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
         }
-    </div>
+        return s;
+    }
+
+    function toIsoLocalDateTime(s){
+        if(!s) return "";
+        if(s.includes('T')) return s; // ya es type=datetime-local
+        const [datePart, timePart="00:00"] = s.trim().split(/\s+/);
+        return `${toIsoDate(datePart)}T${timePart.substring(0,5)}`;
+    }
+
+    async function savePlanned(btn, docId){
+        const tr  = btn.closest('tr');
+        const id  = tr.dataset.id;
+        const raw = tr.querySelector('.planned').value;
+        const iso = toIsoDate(raw);
+        btn.disabled = true;
+        try{
+        const res = await fetch(`/Dashboard/${docId}/Mantenimientos/${id}/fecha`, {
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:`plannedDate=${encodeURIComponent(iso)}`
+        });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        btn.classList.remove('btn-outline-primary'); btn.classList.add('btn-primary');
+        setTimeout(()=>{ btn.classList.remove('btn-primary'); btn.classList.add('btn-outline-primary'); }, 800);
+        }catch(e){
+        alert('No se pudo guardar la fecha: ' + e.message);
+        }finally{ btn.disabled = false; }
+    }
+
+    async function completeMaint(btn, docId){
+        const tr  = btn.closest('tr');
+        const id  = tr.dataset.id;
+        const raw = tr.querySelector('.completedAt').value || new Date().toISOString().slice(0,16);
+        const iso = toIsoLocalDateTime(raw);
+        btn.disabled = true;
+        try{
+        const res = await fetch(`/Dashboard/${docId}/Mantenimientos/${id}/completar`, {
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:`completedAt=${encodeURIComponent(iso)}`
+        });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        location.reload(); // refresca la badge
+        }catch(e){
+        alert('No se pudo completar: ' + e.message);
+        }finally{ btn.disabled = false; }
+    }
+    </script>
+    }
 }
+
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-secondary text-white">
         <h5 class="mb-0">Materiales y Herramientas</h5>
@@ -310,52 +294,55 @@
         }
 
             <!-- BOTONES -->
-            <div class="d-flex gap-3 mt-3">
-                <!-- Botón: Solicitar Materiales -->
-                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#formMateriales">Solicitar Materiales</button>
+            @if (!esCliente)
+            {
+                <div class="d-flex gap-3 mt-3">
+                    <!-- Botón: Solicitar Materiales -->
+                    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#formMateriales">Solicitar Materiales</button>
 
-                <!-- Botón: Registro herramienta en sitio -->
-                <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#formHerramientas">Registro herramienta en sitio</button>
-            </div>
+                    <!-- Botón: Registro herramienta en sitio -->
+                    <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#formHerramientas">Registro herramienta en sitio</button>
+                </div>
 
-            <!-- FORMULARIO PARA SOLICITAR MATERIALES -->
-            <div class="collapse" id="formMateriales">
-                <form asp-action="RegistrarMaterial" asp-controller="Materiales" method="post">
-                    <input type="hidden" name="IdDocumento" value="@Model.Documento.IdDocumento" />
-                    <div class="mb-2">
-                        <label>Nombre del material</label>
-                        <input type="text" name="NombreMaterial" class="form-control" required />
-                    </div>
-                    <div class="mb-2">
-                        <label>¿Es solicitado?</label>
-                        <select name="EsSolicitado" class="form-control">
-                            <option value="true">Sí</option>
-                            <option value="false">No</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary mt-2">Solicitar</button>
-                </form>
-            </div>
+                <!-- FORMULARIO PARA SOLICITAR MATERIALES -->
+                <div class="collapse" id="formMateriales">
+                    <form asp-action="RegistrarMaterial" asp-controller="Materiales" method="post">
+                        <input type="hidden" name="IdDocumento" value="@Model.Documento.IdDocumento" />
+                        <div class="mb-2">
+                            <label>Nombre del material</label>
+                            <input type="text" name="NombreMaterial" class="form-control" required />
+                        </div>
+                        <div class="mb-2">
+                            <label>¿Es solicitado?</label>
+                            <select name="EsSolicitado" class="form-control">
+                                <option value="true">Sí</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-2">Solicitar</button>
+                    </form>
+                </div>
 
-            <!-- FORMULARIO PARA REGISTRAR HERRAMIENTA -->
-            <div class="collapse" id="formHerramientas">
-                <form asp-action="RegistrarHerramienta"asp-controller="Herramientas" method="post">
-                    <input type="hidden" name="IdDocumento" value="@Model.Documento.IdDocumento" />
-                    <input type="hidden" name="IdUsuario" value="@User.FindFirstValue(ClaimTypes.NameIdentifier)" />
+                <!-- FORMULARIO PARA REGISTRAR HERRAMIENTA -->
+                <div class="collapse" id="formHerramientas">
+                    <form asp-action="RegistrarHerramienta"asp-controller="Herramientas" method="post">
+                        <input type="hidden" name="IdDocumento" value="@Model.Documento.IdDocumento" />
+                        <input type="hidden" name="IdUsuario" value="@User.FindFirstValue(ClaimTypes.NameIdentifier)" />
 
-                    <div class="form-group">
-                        <label>Nombre de la herramienta</label>
-                        <input type="text" name="NombreHerramienta" class="form-control" required />
-                    </div>
+                        <div class="form-group">
+                            <label>Nombre de la herramienta</label>
+                            <input type="text" name="NombreHerramienta" class="form-control" required />
+                        </div>
 
-                    <div class="form-group">
-                        <label>Ubicación donde se dejó</label>
-                        <input type="text" name="UbicacionDejado" class="form-control" />
-                    </div>
+                        <div class="form-group">
+                            <label>Ubicación donde se dejó</label>
+                            <input type="text" name="UbicacionDejado" class="form-control" />
+                        </div>
 
-                    <button type="submit" class="btn btn-primary mt-2">Registrar herramienta</button>
-                </form>
-            </div>
+                        <button type="submit" class="btn btn-primary mt-2">Registrar herramienta</button>
+                    </form>
+                </div>
+            }
     </div>
 </div> 
 <!-- CAMBIO DE ESTADO -->
@@ -379,16 +366,19 @@
                             @tarea.Estado
                         </span>
                     </p>
-                    <form asp-action="CambiarEstadoTarea" asp-controller="Dashboard" method="post" class="d-flex align-items-center gap-2">
-                        <input type="hidden" name="idTarea" value="@tarea.IdTarea" />
-                        <select name="nuevoEstado" class="form-select w-auto">
-                            @Html.Raw($"<option value='pendiente' {(tarea.Estado == "pendiente" ? "selected" : "")}>Pendiente</option>")
-                            @Html.Raw($"<option value='en_proceso' {(tarea.Estado == "en_proceso" ? "selected" : "")}>En proceso</option>")
-                            @Html.Raw($"<option value='completado' {(tarea.Estado == "completado" ? "selected" : "")}>Completado</option>")
-                            @Html.Raw($"<option value='cancelado' {(tarea.Estado == "cancelado" ? "selected" : "")}>Cancelado</option>")
-                        </select>
-                        <button type="submit" class="btn btn-primary btn-sm">Actualizar estado</button>
-                    </form>
+                    @if (!esCliente)
+                    {
+                        <form asp-action="CambiarEstadoTarea" asp-controller="Dashboard" method="post" class="d-flex align-items-center gap-2">
+                            <input type="hidden" name="idTarea" value="@tarea.IdTarea" />
+                            <select name="nuevoEstado" class="form-select w-auto">
+                                @Html.Raw($"<option value='pendiente' {(tarea.Estado == "pendiente" ? "selected" : "")}>Pendiente</option>")
+                                @Html.Raw($"<option value='en_proceso' {(tarea.Estado == "en_proceso" ? "selected" : "")}>En proceso</option>")
+                                @Html.Raw($"<option value='completado' {(tarea.Estado == "completado" ? "selected" : "")}>Completado</option>")
+                                @Html.Raw($"<option value='cancelado' {(tarea.Estado == "cancelado" ? "selected" : "")}>Cancelado</option>")
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm">Actualizar estado</button>
+                        </form>
+                    }
                 </div>
             }
         </div>
@@ -397,7 +387,7 @@
 </div>   
 
 @* Mostrar PDF y cotización solo si el usuario NO es técnico *@
-@if (Context.Session.GetInt32("Rol") != 2) // Solo si NO es técnico
+@if (Context.Session.GetInt32("Rol") == 1) // Solo si NO es técnico
 {
     <div class="row">
         <div class="col-md-6">
