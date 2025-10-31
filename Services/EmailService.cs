@@ -329,5 +329,51 @@ namespace Organizacional.Services
             var tasks = unique.Select(to => SendEmailAsync(to, subject, html));
             return Task.WhenAll(tasks);
         }
+
+        public Task SendExecutionReminderAsync(
+            IEnumerable<string> recipients,
+            string documento,
+            DateTime executionDate,
+            string detalleUrl,
+            string? empresa = null,
+            string? descripcion = null,
+            int leadDays = 7)
+        {
+            // Bloques opcionales
+            var empresaBlock = string.IsNullOrWhiteSpace(empresa)
+                ? ""
+                : $"<p><b>Empresa:</b> {Escape(empresa)}</p>"; // usamos "Empresa" para mantener consistencia visual
+
+            var descBlock = string.IsNullOrWhiteSpace(descripcion)
+                ? ""
+                : $@"<div style=""margin-top:10px;background:#fafafa;border:1px solid #eee;padding:10px;border-radius:6px;white-space:pre-wrap"">
+                        {Escape(descripcion)}
+                    </div>";
+
+            var inner = $@"
+                <p>Recordatorio de <b>fecha de ejecución</b> del documento <b>{Escape(documento)}</b>.</p>
+                {empresaBlock}
+                <p>Ejecución programada para el <b>{executionDate:dd/MM/yyyy}</b> (faltan <b>{leadDays}</b> días).</p>
+                {descBlock}
+                <p style=""margin:20px 0"">{CtaButton(detalleUrl, "Ver detalle")}</p>";
+
+            var subject = $"[Tenere] Ejecución – {documento}"
+                        + (string.IsNullOrWhiteSpace(empresa) ? "" : $" – {empresa}")
+                        + $" – {executionDate:dd/MM/yyyy} (en {leadDays} días)";
+
+            var html = BaseTemplate(
+                $"Ejecución – {documento}",
+                $"Recordatorio de ejecución para {documento}",
+                inner
+            );
+
+            var unique = new HashSet<string>(
+                recipients.Where(r => !string.IsNullOrWhiteSpace(r)).Select(r => r!.Trim()),
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            var tasks = unique.Select(to => SendEmailAsync(to, subject, html));
+            return Task.WhenAll(tasks);
+        }
     }
 }

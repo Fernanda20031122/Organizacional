@@ -75,6 +75,13 @@ builder.Services.Configure<MaintenanceNotificationsOptions>(
 builder.Services.AddSingleton<MaintenanceNotificationJob>();
 builder.Services.AddHostedService<MaintenanceNotifier>();
 
+// === Notificaciones por FechaEjecucion (documentos) ===
+builder.Services.Configure<ExecutionNotificationsOptions>(
+    builder.Configuration.GetSection("ExecutionNotifications"));
+
+builder.Services.AddSingleton<ExecutionDateNotificationJob>();
+builder.Services.AddHostedService<ExecutionDateNotifier>();
+
 builder.Services.AddHttpClient();
 
 builder.Services
@@ -278,7 +285,7 @@ app.MapPost("/webhooks/whatsapp", async (HttpRequest req, IHttpClientFactory f) 
         var empresas = await c.GetFromJsonAsync<List<EmpresaDto>>($"{tenereApi}/api/empresas");
         if (empresas is null || empresas.Count == 0)
         {
-            await SendText("No hay fincas registradas en el sistema.");
+            await SendText("No hay empresas registradas en el sistema.");
             return;
         }
 
@@ -290,11 +297,11 @@ app.MapPost("/webhooks/whatsapp", async (HttpRequest req, IHttpClientFactory f) 
             type = "interactive",
             interactive = new {
                 type = "list",
-                body = new { text = "Elige la *finca* para el pendiente:" }, // *negrita* de WhatsApp
+                body = new { text = "Elige la *empresa* para el pendiente:" }, // *negrita* de WhatsApp
                 action = new {
                     button = "Seleccionar",
                     sections = new [] {
-                        new { title = "Fincas", rows = rows }
+                        new { title = "Empresas", rows = rows }
                     }
                 }
             }
@@ -320,9 +327,9 @@ app.MapPost("/webhooks/whatsapp", async (HttpRequest req, IHttpClientFactory f) 
             if (!string.IsNullOrEmpty(selId) && selId.StartsWith("emp_"))
             {
                 var idEmp = int.Parse(selId.Split('_')[1]);
-                state[from] = new FlowState("await_nombre", idEmp, null, null, null, null, selText ?? "Finca seleccionada");
+                state[from] = new FlowState("await_nombre", idEmp, null, null, null, null, selText ?? "Empresa seleccionada");
 
-                await SendText($"Finca seleccionada: *{selText}*\n\n" +
+                await SendText($"Empresa seleccionada: *{selText}*\n\n" +
                                "Por favor, escribe tu *nombre completo*:");
             }
             return Results.Ok();
@@ -370,7 +377,7 @@ app.MapPost("/webhooks/whatsapp", async (HttpRequest req, IHttpClientFactory f) 
             }
             var next = st with { Phase = "await_ubicacion", Nombre = nombre };
             state[from] = next;
-            await SendText("Gracias. Ahora dime la *ubicación* donde ocurre el problema (ej.: bodega principal, finca El Roble, km 3 vía X).");
+            await SendText("Gracias. Ahora dime la *ubicación* donde ocurre el problema (ej.: bodega principal).");
             return Results.Ok();
         }
 
@@ -416,14 +423,14 @@ app.MapPost("/webhooks/whatsapp", async (HttpRequest req, IHttpClientFactory f) 
             if (!final.IdEmpresa.HasValue)
             {
                 state[from] = new FlowState("await_finca", null, null, null, null, null, null);
-                await SendText("Debemos elegir la *finca* primero.");
+                await SendText("Debemos elegir la *empresa* primero.");
                 await SendFincasList();
                 return Results.Ok();
             }
 
             var descripcionCompuesta =
                 $"*Nombre:* {final.Nombre}\n" +
-                $"*Finca:* {final.NombreFinca ?? "(id " + final.IdEmpresa.Value + ")"}\n" +
+                $"*Empresa:* {final.NombreFinca ?? "(id " + final.IdEmpresa.Value + ")"}\n" +
                 $"*Ubicación:* {final.Ubicacion}\n" +
                 $"*Descripción:* {final.Desc}\n" +
                 $"*Contacto:* {celNorm}";
