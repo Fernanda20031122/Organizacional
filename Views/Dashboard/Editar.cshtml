@@ -1,0 +1,221 @@
+﻿@model Organizacional.Models.ViewModels.DocumentoFormViewModel
+
+@{
+    ViewData["Title"] = "Editar pendiente";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="Editar" asp-route-id="@Model.IdDocumento" enctype="multipart/form-data" method="post">
+    @Html.AntiForgeryToken()
+    <input asp-for="IdDocumento" type="hidden" />
+
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Información general</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <label asp-for="TipoDocumento" class="control-label">Tipo de documento</label>
+                <select asp-for="TipoDocumento" class="form-control" id="TipoDocumento">
+                    <option value="">-- Seleccionar tipo --</option>
+                    <option value="Orden">Orden</option>
+                    <option value="Contrato">Contrato</option>
+                    <option value="Otro">Otro</option>
+                </select>
+                <span asp-validation-for="TipoDocumento" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="NumeroDocumento" class="control-label">Número</label>
+                <input asp-for="NumeroDocumento" class="form-control" />
+                <span asp-validation-for="NumeroDocumento" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3 fecha-generacion">
+                <label asp-for="FechaGeneracion" class="control-label">Fecha generación</label>
+                <input asp-for="FechaGeneracion" type="date" class="form-control" />
+                <span asp-validation-for="FechaGeneracion" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3 fecha-inicio">
+                <label asp-for="FechaInicio" class="control-label">Fecha inicio</label>
+                <input asp-for="FechaInicio" type="date" class="form-control" />
+                <span asp-validation-for="FechaInicio" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3 fecha-fin">
+                <label asp-for="FechaFin" class="control-label">Fecha fin</label>
+                <input asp-for="FechaFin" type="date" class="form-control" />
+                <span asp-validation-for="FechaFin" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Descripcion" class="control-label">Descripción</label>
+                <textarea asp-for="Descripcion" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Descripcion" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="IdEmpresa" class="form-label">Empresa</label>
+                <select asp-for="IdEmpresa" class="form-control" asp-items="ViewBag.Empresas">
+                    <option value="">-- Seleccione una empresa --</option>
+                </select>
+                <span asp-validation-for="IdEmpresa" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="FechaEjecucion">Fecha de ejecución</label>
+                <input type="date" asp-for="FechaEjecucion" class="form-control" />
+                <span asp-validation-for="FechaEjecucion" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Asignación y servicios</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label>Técnico asignado</label>
+                <select asp-for="IdTecnicoAsignado" asp-items="ViewBag.Tecnicos" class="form-control">
+                    <option value="">-- Sin técnico --</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label>Colaborador asignado</label>
+                <select asp-for="IdColaboradorAsignado" asp-items="ViewBag.Colaboradores" class="form-control">
+                    <option value="">-- Sin colaborador --</option>
+                </select>
+            </div>
+
+            <div class="form-group form-check mb-2">
+                <input asp-for="Suministro" class="form-check-input" id="Suministro" />
+                <label asp-for="Suministro" class="form-check-label">Suministro</label>
+            </div>
+
+            <div class="form-group form-check mb-2">
+                <input asp-for="Instalacion" class="form-check-input" id="Instalacion" />
+                <label asp-for="Instalacion" class="form-check-label">Instalación</label>
+            </div>
+
+            <div class="form-group form-check mb-2">
+                <input asp-for="Mantenimiento" class="form-check-input" id="Mantenimiento" />
+                <label asp-for="Mantenimiento" class="form-check-label">Mantenimiento</label>
+            </div>
+
+            <div class="form-group form-check mb-2">
+                <input asp-for="Soporte" class="form-check-input" id="Soporte" />
+                <label asp-for="Soporte" class="form-check-label">Soporte</label>
+            </div>
+
+            <div id="mantenimientoCampos" class="mt-3" style="display:none;">
+                <div class="form-group mb-3">
+                    <label asp-for="CantidadMantenimientos">Cantidad de mantenimientos</label>
+                    <input asp-for="CantidadMantenimientos" class="form-control" type="number" min="1" />
+                    <small class="text-muted">Si el pendiente ya tiene mantenimientos programados, este campo actualiza el total, pero no borra fechas ya creadas.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Documentos PDF</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-4">
+                <label for="ArchivoPdf" class="form-label">Documento PDF</label>
+
+                @if (!string.IsNullOrEmpty(Model.ArchivoUrlActual))
+                {
+                    <p class="mb-2">
+                        Archivo actual:
+                        <a href="@Model.ArchivoUrlActual" target="_blank">Ver documento actual</a>
+                    </p>
+                    <div class="form-check mb-2">
+                        <input asp-for="EliminarArchivoActual" class="form-check-input" />
+                        <label asp-for="EliminarArchivoActual" class="form-check-label">Eliminar documento actual</label>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-2">Actualmente no hay documento PDF cargado.</p>
+                }
+
+                <input asp-for="ArchivoPdf" type="file" class="form-control" accept=".pdf" />
+                <small class="text-muted">Seleccione un PDF nuevo para subirlo o reemplazar el actual.</small>
+                <span asp-validation-for="ArchivoPdf" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="ArchivoCotizacionPdf" class="form-label">Cotización PDF</label>
+
+                @if (!string.IsNullOrEmpty(Model.CotizacionArchivoUrlActual))
+                {
+                    <p class="mb-2">
+                        Archivo actual:
+                        <a href="@Model.CotizacionArchivoUrlActual" target="_blank">Ver cotización actual</a>
+                    </p>
+                    <div class="form-check mb-2">
+                        <input asp-for="EliminarCotizacionActual" class="form-check-input" />
+                        <label asp-for="EliminarCotizacionActual" class="form-check-label">Eliminar cotización actual</label>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-2">Actualmente no hay cotización PDF cargada.</p>
+                }
+
+                <input asp-for="ArchivoCotizacionPdf" type="file" class="form-control" accept=".pdf" />
+                <small class="text-muted">Seleccione un PDF nuevo para subirlo o reemplazar el actual.</small>
+                <span asp-validation-for="ArchivoCotizacionPdf" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+    <a asp-action="Detalle" asp-route-id="@Model.IdDocumento" class="btn btn-secondary">Cancelar</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function manejarTipoDocumento() {
+            const tipo = document.getElementById("TipoDocumento").value;
+            const fechaInicio = document.querySelector(".fecha-inicio");
+            const fechaFin = document.querySelector(".fecha-fin");
+            const fechaGeneracion = document.querySelector(".fecha-generacion");
+
+            if (tipo === "Contrato") {
+                fechaInicio.style.display = "block";
+                fechaFin.style.display = "block";
+                fechaGeneracion.style.display = "none";
+            } else if (tipo === "Orden" || tipo === "Otro") {
+                fechaInicio.style.display = "none";
+                fechaFin.style.display = "none";
+                fechaGeneracion.style.display = "block";
+            } else {
+                fechaInicio.style.display = "none";
+                fechaFin.style.display = "none";
+                fechaGeneracion.style.display = "none";
+            }
+        }
+
+        function toggleMantenimientoCampos() {
+            const mant = document.getElementById("Mantenimiento").checked;
+            document.getElementById("mantenimientoCampos").style.display = mant ? "block" : "none";
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("TipoDocumento").addEventListener("change", manejarTipoDocumento);
+            document.getElementById("Mantenimiento").addEventListener("change", toggleMantenimientoCampos);
+            manejarTipoDocumento();
+            toggleMantenimientoCampos();
+        });
+    </script>
+}

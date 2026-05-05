@@ -192,6 +192,10 @@
                         }
                         </p>
                         <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-success btn-sm mt-2">Ver Detalle</a>
+                        @if (rolUsuario != 3)
+                        {
+                            <a href="@Url.Action("Editar", "Dashboard", new { id = item.IdDocumento })" class="btn btn-primary btn-sm mt-2">Editar</a>
+                        }
                     </div>
                     </div>
                 }

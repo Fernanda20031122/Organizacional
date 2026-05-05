@@ -1,4 +1,4 @@
-@using Organizacional.Models.ViewModels
+﻿@using Organizacional.Models.ViewModels
 @model IEnumerable<DashboardItemViewModel>
 
 @foreach (var item in Model)
@@ -79,6 +79,10 @@
         </td>
         <td>
             <a href="@Url.Action("Detalle", "Dashboard", new { id = item.IdDocumento })" class="btn btn-success btn-sm mt-2">Ver Detalle</a>
+            @if (Context.Session.GetInt32("Rol") != 3)
+            {
+                <a href="@Url.Action("Editar", "Dashboard", new { id = item.IdDocumento })" class="btn btn-primary btn-sm mt-2">Editar</a>
+            }
         </td>
     </tr>
 }

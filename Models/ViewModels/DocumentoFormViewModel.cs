@@ -6,6 +6,8 @@ namespace Organizacional.Models.ViewModels
 {
     public class DocumentoFormViewModel
     {
+        public int IdDocumento { get; set; }
+
         // Datos generales del documento
         [Required]
         public string TipoDocumento { get; set; }
@@ -38,16 +40,13 @@ namespace Organizacional.Models.ViewModels
        public int? IdTecnicoAsignado { get; set; }
        public int? IdColaboradorAsignado { get; set; }
 
-        // Lista de técnicos disponibles (opcional)
-        // Esta lista se puede llenar desde el controlador
-        // public List<SelectListItem>? TecnicosDisponibles { get; set; }
-        
-        // Lista de colaboradores disponibles (opcional)
-        // Esta lista se puede llenar desde el controlador
+        // Archivos actuales, usados en la pantalla de edición
+        public string? ArchivoUrlActual { get; set; }
+        public string? CotizacionArchivoUrlActual { get; set; }
+        public bool EliminarArchivoActual { get; set; }
+        public bool EliminarCotizacionActual { get; set; }
 
-       // public List<SelectListItem>? TecnicosDisponibles { get; set; }
-
-        // Archivos
+        // Archivos nuevos
         public IFormFile? ArchivoPdf { get; set; }
 
         public IFormFile? ArchivoCotizacionPdf { get; set; }

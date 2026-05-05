@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Organizacional.Data;
@@ -460,6 +461,317 @@ namespace Organizacional.Controllers
 
             // si no hay ninguno, comienza en 1
             return (max + 1).ToString();
+        }
+
+        private async Task CargarListasFormularioAsync(int? idTecnicoSeleccionado = null, int? idColaboradorSeleccionado = null, int? idEmpresaSeleccionada = null)
+        {
+            var tecnicos = await _context.Usuarios
+                .Where(u => u.IdRol == 2 && u.Estado == "activo")
+                .OrderBy(u => u.Nombre)
+                .ToListAsync();
+
+            var colaboradores = await _context.Usuarios
+                .Where(u => u.IdRol == 1 && u.Estado == "activo")
+                .OrderBy(u => u.Nombre)
+                .ToListAsync();
+
+            var empresas = await _context.Empresas
+                .OrderBy(e => e.Nombre)
+                .ToListAsync();
+
+            ViewBag.Tecnicos = new SelectList(tecnicos, "IdUsuario", "Nombre", idTecnicoSeleccionado);
+            ViewBag.Colaboradores = new SelectList(colaboradores, "IdUsuario", "Nombre", idColaboradorSeleccionado);
+            ViewBag.Empresas = new SelectList(empresas, "IdEmpresa", "Nombre", idEmpresaSeleccionada);
+        }
+
+        private void ValidarArchivoPdf(IFormFile? archivo, string campo)
+        {
+            if (archivo == null || archivo.Length == 0)
+                return;
+
+            var extension = Path.GetExtension(archivo.FileName).ToLowerInvariant();
+            if (extension != ".pdf")
+            {
+                ModelState.AddModelError(campo, "Solo se permiten archivos PDF.");
+            }
+        }
+
+        private async Task<string> GuardarArchivoPdfAsync(IFormFile archivo)
+        {
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            Directory.CreateDirectory(uploadsPath);
+
+            var nombreArchivo = $"{Guid.NewGuid()}{Path.GetExtension(archivo.FileName).ToLowerInvariant()}";
+            var ruta = Path.Combine(uploadsPath, nombreArchivo);
+
+            await using var stream = new FileStream(ruta, FileMode.Create);
+            await archivo.CopyToAsync(stream);
+
+            return "/uploads/" + nombreArchivo;
+        }
+
+        private void EliminarArchivoFisico(string? archivoUrl)
+        {
+            if (string.IsNullOrWhiteSpace(archivoUrl))
+                return;
+
+            if (!archivoUrl.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var rutaRelativa = archivoUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+            var rutaCompleta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", rutaRelativa);
+
+            if (System.IO.File.Exists(rutaCompleta))
+            {
+                System.IO.File.Delete(rutaCompleta);
+            }
+        }
+
+        private static List<DateTime?> CalcularFechasMantenimiento(DocumentoFormViewModel modelo, int cantidad)
+        {
+            var fechas = new List<DateTime?>();
+
+            if (modelo.TipoDocumento == "Contrato" && modelo.FechaInicio.HasValue && modelo.FechaFin.HasValue)
+            {
+                var inicio = modelo.FechaInicio.Value.ToDateTime(TimeOnly.MinValue);
+                var fin = modelo.FechaFin.Value.ToDateTime(TimeOnly.MinValue);
+                var dias = (fin - inicio).TotalDays;
+                var paso = dias / (cantidad + 1d);
+
+                for (var i = 1; i <= cantidad; i++)
+                    fechas.Add(inicio.AddDays(paso * i));
+            }
+            else
+            {
+                for (var i = 0; i < cantidad; i++)
+                    fechas.Add(null);
+            }
+
+            return fechas;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Editar(int id)
+        {
+            var idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+            var rol = HttpContext.Session.GetInt32("Rol");
+
+            if (idUsuario == 0 || rol == null)
+                return RedirectToAction("Login", "Auth");
+
+            // Por seguridad, los clientes solo consultan sus pendientes; no los editan desde esta vista.
+            if (rol == 3)
+                return Forbid();
+
+            var documento = await _context.Documentos
+                .Include(d => d.Tareas)
+                .Include(d => d.Mantenimientos)
+                .FirstOrDefaultAsync(d => d.IdDocumento == id);
+
+            if (documento == null)
+                return NotFound();
+
+            var tarea = documento.Tareas.FirstOrDefault();
+            var mantenimiento = documento.Mantenimientos.FirstOrDefault();
+
+            var modelo = new DocumentoFormViewModel
+            {
+                IdDocumento = documento.IdDocumento,
+                TipoDocumento = documento.TipoDocumento,
+                NumeroDocumento = documento.NumeroDocumento,
+                Descripcion = documento.Descripcion,
+                FechaEjecucion = documento.FechaEjecucion,
+                FechaGeneracion = documento.FechaGeneracion,
+                FechaInicio = documento.FechaInicio,
+                FechaFin = documento.FechaFin,
+                IdEmpresa = documento.IdEmpresa ?? 0,
+                Suministro = documento.Suministro ?? false,
+                Instalacion = documento.Instalacion ?? false,
+                Mantenimiento = documento.Mantenimiento ?? false,
+                Soporte = documento.Soporte ?? false,
+                CantidadMantenimientos = mantenimiento?.TotalMantenimientos,
+                IdTecnicoAsignado = tarea?.IdTecnicoAsignado,
+                IdColaboradorAsignado = tarea?.IdColaboradorAsignado,
+                ArchivoUrlActual = documento.ArchivoUrl,
+                CotizacionArchivoUrlActual = documento.CotizacionArchivoUrl
+            };
+
+            await CargarListasFormularioAsync(modelo.IdTecnicoAsignado, modelo.IdColaboradorAsignado, modelo.IdEmpresa);
+            return View(modelo);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Editar(int id, DocumentoFormViewModel modelo)
+        {
+            var idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+            var rol = HttpContext.Session.GetInt32("Rol");
+
+            if (idUsuario == 0 || rol == null)
+                return RedirectToAction("Login", "Auth");
+
+            if (rol == 3)
+                return Forbid();
+
+            if (id != modelo.IdDocumento)
+                return BadRequest("El identificador del pendiente no coincide.");
+
+            var documento = await _context.Documentos
+                .Include(d => d.Tareas)
+                .Include(d => d.Mantenimientos)
+                .Include(d => d.MaintenanceSchedules)
+                .FirstOrDefaultAsync(d => d.IdDocumento == id);
+
+            if (documento == null)
+                return NotFound();
+
+            if (string.IsNullOrEmpty(modelo.TipoDocumento) ||
+                !(new[] { "Contrato", "Orden", "Otro" }.Contains(modelo.TipoDocumento)))
+            {
+                ModelState.AddModelError("TipoDocumento", "Tipo de documento inválido.");
+            }
+
+            if (modelo.TipoDocumento == "Contrato")
+            {
+                if (modelo.FechaInicio == null || modelo.FechaFin == null)
+                    ModelState.AddModelError("", "Debes ingresar fecha de inicio y fin para un contrato.");
+
+                if (modelo.FechaInicio.HasValue && modelo.FechaFin.HasValue && modelo.FechaFin.Value < modelo.FechaInicio.Value)
+                    ModelState.AddModelError("FechaFin", "La fecha fin no puede ser anterior a la fecha de inicio.");
+            }
+            else
+            {
+                if (modelo.FechaGeneracion == null)
+                    ModelState.AddModelError("FechaGeneracion", "La fecha de generación es obligatoria.");
+            }
+
+            if (modelo.IdEmpresa <= 0)
+                ModelState.AddModelError("IdEmpresa", "Debes seleccionar una empresa.");
+
+            ValidarArchivoPdf(modelo.ArchivoPdf, nameof(modelo.ArchivoPdf));
+            ValidarArchivoPdf(modelo.ArchivoCotizacionPdf, nameof(modelo.ArchivoCotizacionPdf));
+
+            if (!ModelState.IsValid)
+            {
+                modelo.ArchivoUrlActual = documento.ArchivoUrl;
+                modelo.CotizacionArchivoUrlActual = documento.CotizacionArchivoUrl;
+                await CargarListasFormularioAsync(modelo.IdTecnicoAsignado, modelo.IdColaboradorAsignado, modelo.IdEmpresa);
+                return View(modelo);
+            }
+
+            documento.TipoDocumento = modelo.TipoDocumento;
+            documento.NumeroDocumento = modelo.NumeroDocumento;
+            documento.Descripcion = modelo.Descripcion;
+            documento.IdEmpresa = modelo.IdEmpresa;
+            documento.FechaEjecucion = modelo.FechaEjecucion;
+            documento.Suministro = modelo.Suministro;
+            documento.Instalacion = modelo.Instalacion;
+            documento.Mantenimiento = modelo.Mantenimiento;
+            documento.Soporte = modelo.Soporte;
+
+            if (modelo.TipoDocumento == "Contrato")
+            {
+                documento.FechaInicio = modelo.FechaInicio;
+                documento.FechaFin = modelo.FechaFin;
+                documento.FechaGeneracion = null;
+            }
+            else
+            {
+                documento.FechaGeneracion = modelo.FechaGeneracion;
+                documento.FechaInicio = null;
+                documento.FechaFin = null;
+            }
+
+            if (modelo.ArchivoPdf != null && modelo.ArchivoPdf.Length > 0)
+            {
+                var archivoAnterior = documento.ArchivoUrl;
+                documento.ArchivoUrl = await GuardarArchivoPdfAsync(modelo.ArchivoPdf);
+                EliminarArchivoFisico(archivoAnterior);
+            }
+            else if (modelo.EliminarArchivoActual)
+            {
+                EliminarArchivoFisico(documento.ArchivoUrl);
+                documento.ArchivoUrl = null;
+            }
+
+            if (modelo.ArchivoCotizacionPdf != null && modelo.ArchivoCotizacionPdf.Length > 0)
+            {
+                var cotizacionAnterior = documento.CotizacionArchivoUrl;
+                documento.CotizacionArchivoUrl = await GuardarArchivoPdfAsync(modelo.ArchivoCotizacionPdf);
+                documento.CotizacionFecha = DateTime.Today;
+                EliminarArchivoFisico(cotizacionAnterior);
+            }
+            else if (modelo.EliminarCotizacionActual)
+            {
+                EliminarArchivoFisico(documento.CotizacionArchivoUrl);
+                documento.CotizacionArchivoUrl = null;
+                documento.CotizacionFecha = null;
+            }
+
+            var tarea = documento.Tareas.FirstOrDefault();
+            if (tarea == null && (modelo.IdTecnicoAsignado.HasValue || modelo.IdColaboradorAsignado.HasValue))
+            {
+                tarea = new Tarea
+                {
+                    IdDocumento = documento.IdDocumento,
+                    FechaAsignacion = DateOnly.FromDateTime(DateTime.Today),
+                    Estado = "pendiente",
+                    Completada = false
+                };
+                _context.Tareas.Add(tarea);
+            }
+
+            if (tarea != null)
+            {
+                tarea.IdTecnicoAsignado = modelo.IdTecnicoAsignado;
+                tarea.IdColaboradorAsignado = modelo.IdColaboradorAsignado;
+                tarea.FechaAsignacion ??= DateOnly.FromDateTime(DateTime.Today);
+                if (string.IsNullOrWhiteSpace(tarea.Estado))
+                    tarea.Estado = "pendiente";
+            }
+
+            if (modelo.Mantenimiento && (modelo.CantidadMantenimientos ?? 0) > 0)
+            {
+                var cantidad = modelo.CantidadMantenimientos!.Value;
+                var mantenimiento = documento.Mantenimientos.FirstOrDefault();
+
+                if (mantenimiento == null)
+                {
+                    mantenimiento = new Mantenimiento
+                    {
+                        IdDocumento = documento.IdDocumento,
+                        MantenimientoRealizado = 0,
+                        ProximoMantenimiento = null,
+                        FechasRealizadasJson = JsonSerializer.Serialize(new List<string>())
+                    };
+                    _context.Mantenimientos.Add(mantenimiento);
+                }
+
+                mantenimiento.TotalMantenimientos = cantidad;
+
+                if (!documento.MaintenanceSchedules.Any())
+                {
+                    short seq = 1;
+                    foreach (var fecha in CalcularFechasMantenimiento(modelo, cantidad))
+                    {
+                        _context.MaintenanceSchedules.Add(new MaintenanceSchedule
+                        {
+                            DocumentoId = documento.IdDocumento,
+                            Seq = seq++,
+                            PlannedDate = fecha,
+                            IsCompleted = false,
+                            Notified7d = false,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Exito"] = "Pendiente actualizado correctamente.";
+            return RedirectToAction(nameof(Detalle), new { id = documento.IdDocumento });
         }
 
         [HttpPost]
