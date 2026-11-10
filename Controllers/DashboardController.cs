@@ -26,9 +26,9 @@ namespace Organizacional.Controllers
         }
         public async Task<IActionResult> Index(string? empresa, string? estado, string? tipo)
         {
-            var idUsuario  = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
-            var rol        = HttpContext.Session.GetInt32("Rol");
-            var idEmpresa  = HttpContext.Session.GetInt32("IdEmpresa");
+            var idUsuario = HttpContext.Session.GetInt32("IdUsuario") ?? 0;
+            var rol = HttpContext.Session.GetInt32("Rol");
+            var idEmpresa = HttpContext.Session.GetInt32("IdEmpresa");
 
             if (idUsuario == 0 || rol == null)
                 return RedirectToAction("Login", "Auth");
@@ -78,10 +78,10 @@ namespace Organizacional.Controllers
             if (!string.IsNullOrEmpty(tipo))
             {
                 documentosQuery = documentosQuery.Where(d =>
-                    (tipo == "Suministro"  && d.Suministro  == true) ||
+                    (tipo == "Suministro" && d.Suministro == true) ||
                     (tipo == "Instalacion" && d.Instalacion == true) ||
                     (tipo == "Mantenimiento" && d.Mantenimiento == true) ||
-                    (tipo == "Soporte"     && d.Soporte     == true)
+                    (tipo == "Soporte" && d.Soporte == true)
                 );
             }
 
@@ -128,7 +128,7 @@ namespace Organizacional.Controllers
 
                 ColaboradorAsignado = d.Tareas.FirstOrDefault(t => t.IdColaboradorAsignadoNavigation != null)?.IdColaboradorAsignadoNavigation?.Nombre ?? "No asignado",
 
-                Suministro  = d.Suministro  ?? false,
+                Suministro = d.Suministro ?? false,
                 Instalacion = d.Instalacion ?? false,
                 Mantenimiento = d.Mantenimiento ?? false,
                 Soporte = d.Soporte ?? false
@@ -202,7 +202,7 @@ namespace Organizacional.Controllers
         [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> PendientesTable(string? empresa, string? estado, string? tipo)
         {
-            var rol       = HttpContext.Session.GetInt32("Rol");
+            var rol = HttpContext.Session.GetInt32("Rol");
             var idEmpresa = HttpContext.Session.GetInt32("IdEmpresa");
 
             if (rol == null) return Unauthorized();
@@ -282,6 +282,7 @@ namespace Organizacional.Controllers
                 Mantenimiento = modelo.Mantenimiento,
                 Soporte = modelo.Soporte,
                 FechaSubida = DateOnly.FromDateTime(DateTime.Today),
+                FechaEjecucion = modelo.FechaEjecucion,
                 Asignada = false,
                 IdUsuarioSubio = idUsuarioSubio
             };
@@ -333,7 +334,7 @@ namespace Organizacional.Controllers
                 if (modelo.TipoDocumento == "Contrato" && modelo.FechaInicio.HasValue && modelo.FechaFin.HasValue)
                 {
                     var start = modelo.FechaInicio.Value.ToDateTime(TimeOnly.MinValue);
-                    var end   = modelo.FechaFin.Value.ToDateTime(TimeOnly.MinValue);
+                    var end = modelo.FechaFin.Value.ToDateTime(TimeOnly.MinValue);
                     var spanDays = (end - start).TotalDays;
                     var step = spanDays / (count + 1d);   // double
 
@@ -368,47 +369,6 @@ namespace Organizacional.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            // ===== Email: nuevo pendiente =====
-            const int ROL_ADMIN = 1;
-
-            var creador = await _context.Usuarios
-                .Where(u => u.IdUsuario == idUsuarioSubio)
-                .Select(u => new { u.Nombre, u.Correo })
-                .FirstOrDefaultAsync();
-
-            var adminMails = await _context.Usuarios
-                .Where(u => u.IdRol == ROL_ADMIN && u.Estado == "activo" && u.Correo != null && u.Correo != "")
-                .Select(u => u.Correo!)
-                .ToListAsync();
-
-            var baseUrl = _cfg["PublicBaseUrl"];
-            var detalleUrl = !string.IsNullOrWhiteSpace(baseUrl)
-                ? $"{baseUrl!.TrimEnd('/')}/Dashboard/Detalle/{documento.IdDocumento}"
-                : Url.Action("Detalle", "Dashboard", new { id = documento.IdDocumento }, Request.Scheme)!;
-
-            var empresaNombre = await _context.Empresas
-                .Where(e => e.IdEmpresa == documento.IdEmpresa)
-                .Select(e => e.Nombre)
-                .FirstOrDefaultAsync();
-
-            await _email.SendPendienteCreadoAsync(
-                new[] { creador?.Correo ?? HttpContext.Session.GetString("Correo") ?? "" }.Concat(adminMails),
-                new EmailService.PendienteEmailModel(
-                    documento.IdDocumento,
-                    documento.NumeroDocumento,
-                    documento.TipoDocumento,
-                    empresaNombre,
-                    creador?.Nombre ?? HttpContext.Session.GetString("Nombre"),
-                    documento.FechaSubida,
-                    documento.Suministro ?? false,
-                    documento.Instalacion ?? false,
-                    documento.Mantenimiento ?? false,
-                    documento.Soporte ?? false,
-                    documento.Descripcion,
-                    detalleUrl
-                )
-            );
-
             // Crear tarea si hay asignación
             if (modelo.IdTecnicoAsignado.HasValue || modelo.IdColaboradorAsignado.HasValue)
             {
@@ -422,6 +382,7 @@ namespace Organizacional.Controllers
                     Completada = false
                 };
                 _context.Tareas.Add(tarea);
+                documento.Asignada = true;
                 await _context.SaveChangesAsync();
             }
 
@@ -438,6 +399,56 @@ namespace Organizacional.Controllers
                 };
                 _context.Mantenimientos.Add(mantenimiento);
                 await _context.SaveChangesAsync();
+            }
+
+            // La notificación no debe impedir que el pendiente quede completamente guardado.
+            try
+            {
+                // ===== Email: nuevo pendiente =====
+                const int ROL_ADMIN = 1;
+
+                var creador = await _context.Usuarios
+                    .Where(u => u.IdUsuario == idUsuarioSubio)
+                    .Select(u => new { u.Nombre, u.Correo })
+                    .FirstOrDefaultAsync();
+
+                var adminMails = await _context.Usuarios
+                    .Where(u => u.IdRol == ROL_ADMIN && u.Estado == "activo" && u.Correo != null && u.Correo != "")
+                    .Select(u => u.Correo!)
+                    .ToListAsync();
+
+                var baseUrl = _cfg["PublicBaseUrl"];
+                var detalleUrl = !string.IsNullOrWhiteSpace(baseUrl)
+                    ? $"{baseUrl!.TrimEnd('/')}/Dashboard/Detalle/{documento.IdDocumento}"
+                    : Url.Action("Detalle", "Dashboard", new { id = documento.IdDocumento }, Request.Scheme)!;
+
+                var empresaNombre = await _context.Empresas
+                    .Where(e => e.IdEmpresa == documento.IdEmpresa)
+                    .Select(e => e.Nombre)
+                    .FirstOrDefaultAsync();
+
+                await _email.SendPendienteCreadoAsync(
+                    new[] { creador?.Correo ?? HttpContext.Session.GetString("Correo") ?? "" }.Concat(adminMails),
+                    new EmailService.PendienteEmailModel(
+                        documento.IdDocumento,
+                        documento.NumeroDocumento,
+                        documento.TipoDocumento,
+                        empresaNombre,
+                        creador?.Nombre ?? HttpContext.Session.GetString("Nombre"),
+                        documento.FechaSubida,
+                        documento.Suministro ?? false,
+                        documento.Instalacion ?? false,
+                        documento.Mantenimiento ?? false,
+                        documento.Soporte ?? false,
+                        documento.Descripcion,
+                        detalleUrl
+                    )
+                );
+
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[TENERE] Falló notificación del pendiente {documento.IdDocumento}: {ex}");
             }
 
             return RedirectToAction(nameof(Index));
@@ -904,7 +915,7 @@ namespace Organizacional.Controllers
 
             if (documento == null)
                 return NotFound();
-                
+
             // 🔒 Validación: clientes solo acceden a documentos de su empresa
             if (rol == 3 && idEmpresaSesion.HasValue && documento.IdEmpresa != idEmpresaSesion.Value)
             {
@@ -931,7 +942,7 @@ namespace Organizacional.Controllers
         {
             if ((HttpContext.Session.GetInt32("IdUsuario") ?? 0) == 0)
                 return Unauthorized();
-            
+
             var rol = HttpContext.Session.GetInt32("Rol");
             var rows = await _context.MaintenanceSchedules
                 .Where(m => m.DocumentoId == id)
@@ -950,12 +961,12 @@ namespace Organizacional.Controllers
             var rol = HttpContext.Session.GetInt32("Rol");
             if ((HttpContext.Session.GetInt32("IdUsuario") ?? 0) == 0) return Unauthorized();
             if (rol == 3) return Forbid(); // clientes solo ven, no editan
-            
+
             var m = await _context.MaintenanceSchedules.FirstOrDefaultAsync(x => x.Id == id && x.DocumentoId == docId);
             if (m == null) return NotFound();
             m.PlannedDate = plannedDate.Date;
-            m.Notified7d  = false;
-            m.UpdatedAt   = DateTime.UtcNow;
+            m.Notified7d = false;
+            m.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return Ok();
         }
@@ -968,12 +979,12 @@ namespace Organizacional.Controllers
             var rol = HttpContext.Session.GetInt32("Rol");
             if ((HttpContext.Session.GetInt32("IdUsuario") ?? 0) == 0) return Unauthorized();
             if (rol == 3) return Forbid(); // clientes solo ven, no editan
-            
+
             var m = await _context.MaintenanceSchedules.FirstOrDefaultAsync(x => x.Id == id && x.DocumentoId == docId);
             if (m == null) return NotFound();
             m.IsCompleted = true;
             m.CompletedAt = completedAt;
-            m.UpdatedAt   = DateTime.UtcNow;
+            m.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return Ok();
         }
@@ -1091,7 +1102,7 @@ namespace Organizacional.Controllers
         {
             var rol = HttpContext.Session.GetInt32("Rol");
             if (rol == 3) return Forbid();  // ⛔ clientes no pueden modificar
-            
+
             if (fechaEjecucion == null)
             {
                 TempData["Error"] = "Debes seleccionar una fecha válida.";
@@ -1111,7 +1122,7 @@ namespace Organizacional.Controllers
             TempData["Exito"] = "Fecha de ejecución actualizada correctamente.";
             return RedirectToAction("Detalle", new { id = idDocumento });
         }
-    
+
         [HttpPost]
         public async Task<IActionResult> CambiarEstadoTarea(int idTarea, string nuevoEstado)
         {
